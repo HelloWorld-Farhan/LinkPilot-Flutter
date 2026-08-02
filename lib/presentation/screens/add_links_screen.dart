@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/url_parser.dart';
 import '../providers/database_provider.dart';
-import '../providers/settings_provider.dart';
 import 'preview_screen.dart';
 
 class AddLinksScreen extends ConsumerStatefulWidget {
@@ -22,13 +21,8 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize email from settings
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final email = ref.read(settingsProvider).senderEmail;
-      if (email.isNotEmpty) {
-        _emailController.text = email;
-      }
-    });
+    // Default fallback
+    _emailController.text = "LinkPilot.support@gmail.com";
   }
 
   void _addRows(int count) {
@@ -113,19 +107,25 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                   'Links',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                PopupMenuButton<int>(
-                  onSelected: _addRows,
-                  child: Chip(
-                    label: const Text('Add More'),
-                    avatar: const Icon(Icons.add, size: 18),
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    side: BorderSide.none,
-                  ),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 1, child: Text('+ 1 Link')),
-                    const PopupMenuItem(value: 5, child: Text('+ 5 Links')),
-                    const PopupMenuItem(value: 20, child: Text('+ 20 Links')),
-                    const PopupMenuItem(value: 50, child: Text('+ 50 Links')),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ActionChip(
+                      label: const Text('+ 1'),
+                      onPressed: () => _addRows(1),
+                    ),
+                    ActionChip(
+                      label: const Text('+ 2'),
+                      onPressed: () => _addRows(2),
+                    ),
+                    ActionChip(
+                      label: const Text('+ 5'),
+                      onPressed: () => _addRows(5),
+                    ),
+                    ActionChip(
+                      label: const Text('+ 10'),
+                      onPressed: () => _addRows(10),
+                    ),
                   ],
                 ),
               ],

@@ -25,7 +25,7 @@ void callbackDispatcher() {
         var android = const AndroidInitializationSettings('@mipmap/ic_launcher');
         var ios = const DarwinInitializationSettings();
         var settings = InitializationSettings(android: android, iOS: ios);
-        await flip.initialize(settings);
+        await flip.initialize(settings: settings);
 
         var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
             'linkpilot_channel',
@@ -36,10 +36,10 @@ void callbackDispatcher() {
         var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
         
         await flip.show(
-            0,
-            'LinkPilot Reminder',
-            'You have $pendingCount pending links to complete today.',
-            platformChannelSpecifics,
+            id: 0,
+            title: 'LinkPilot Reminder',
+            body: 'You have $pendingCount pending links to complete today.',
+            notificationDetails: platformChannelSpecifics,
             payload: 'Default_Sound'
         );
       }

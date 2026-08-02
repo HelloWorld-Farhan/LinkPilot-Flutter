@@ -43,29 +43,53 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.blue.withOpacity(0.2),
-                blurRadius: 40,
-                spreadRadius: 10,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.2),
+                    blurRadius: 40,
+                    spreadRadius: 10,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Image.asset(
-            'assets/Logo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const Icon(
-              Icons.link,
-              size: 80,
-              color: Colors.blue,
+              child: Image.asset(
+                'assets/Logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.link,
+                  size: 80,
+                  color: Colors.blue,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+            const Text(
+              'LinkPilot',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2563EB),
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Automating your link management',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         )
-        .animate()
+        .animate(interval: 200.ms)
         .fadeIn(duration: 800.ms)
         .scale(
           begin: const Offset(0.8, 0.8),

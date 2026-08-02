@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'home_screen.dart';
 import 'history_screen.dart';
-import 'settings_screen.dart';
 
 final bottomNavIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -17,7 +16,6 @@ class MainLayout extends ConsumerWidget {
     final screens = [
       const HomeScreen(),
       const HistoryScreen(),
-      const SettingsScreen(),
     ];
 
     return Scaffold(
@@ -40,11 +38,6 @@ class MainLayout extends ConsumerWidget {
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
             label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
           ),
         ],
       ),
