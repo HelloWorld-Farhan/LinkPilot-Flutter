@@ -9,7 +9,7 @@ import 'core/constants/app_constants.dart';
 import 'data/models/link_item.dart';
 import 'data/models/history_item.dart';
 import 'presentation/providers/database_provider.dart';
-import 'presentation/providers/settings_provider.dart';
+
 import 'presentation/screens/splash_screen.dart';
 import 'core/services/background_service.dart';
 
@@ -31,7 +31,7 @@ void main() async {
   runApp(
     ProviderScope(
       overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
+
         isarProvider.overrideWithValue(isar),
       ],
       child: const LinkPilotApp(),
@@ -44,12 +44,10 @@ class LinkPilotApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: settings.isDarkMode ? AppTheme.lightTheme : AppTheme.lightTheme, // You can add dark mode later
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );
   }

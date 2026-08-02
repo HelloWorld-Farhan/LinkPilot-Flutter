@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ],
         )
-        .animate(interval: 200.ms)
+        .animate()
         .fadeIn(duration: 800.ms)
         .scale(
           begin: const Offset(0.8, 0.8),
