@@ -13,7 +13,10 @@ class BackendService {
     try {
       final response = await http.post(
         Uri.parse(_gasUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
         body: jsonEncode({
           'reportName': reportName,
           'senderEmail': recipientEmail, // Google Apps Script still looks for senderEmail in the old code, wait, let's just pass both so we don't break the old variable in GAS if they didn't update the variable name. I'll pass 'recipientEmail' and 'senderEmail'.
