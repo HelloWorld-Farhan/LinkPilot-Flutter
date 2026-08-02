@@ -356,7 +356,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                             onChanged: (val) {
                               if (val.isNotEmpty && data.nameController.text.isEmpty) {
                                 setState(() {
-                                  data.nameController.text = UrlParser.extractCompany(val);
+                                  data.nameController.text = UrlParser.extractCompanyName(val);
                                 });
                               }
                             },
