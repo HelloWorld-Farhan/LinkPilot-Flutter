@@ -95,6 +95,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () => _confirmDelete(context, ref, item),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -117,6 +121,34 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     ).animate().fadeIn(delay: (index * 100).ms).slideX(begin: 0.1);
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref, HistoryItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Report?'),
+        content: const Text(
+            'This deletion will permanently remove all links in this report and terminate this record. This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              ref.read(historyListProvider.notifier).removeHistory(item.id);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Report deleted successfully.')),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showHistoryDetails(BuildContext context, HistoryItem item) {

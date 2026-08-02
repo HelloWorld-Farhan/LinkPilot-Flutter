@@ -94,4 +94,11 @@ class HistoryListNotifier extends StateNotifier<List<HistoryItem>> {
     });
     state = [];
   }
+
+  Future<void> removeHistory(Id id) async {
+    await _isar.writeTxn(() async {
+      await _isar.historyItems.delete(id);
+    });
+    state = state.where((item) => item.id != id).toList();
+  }
 }

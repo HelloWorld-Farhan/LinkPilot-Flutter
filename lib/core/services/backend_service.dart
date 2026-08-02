@@ -24,8 +24,12 @@ class BackendService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 302) {
-        // Apps Script often returns 302 redirects which http package handles automatically,
-        // but if it returns the JSON directly it will be 200.
+        if (response.body.trim().startsWith('<')) {
+          return {
+            'success': false, 
+            'error': 'Deployment Error: Your Google Apps Script returned an HTML page instead of data. Please ensure it is deployed with "Execute as: Me" and "Who has access: Anyone".'
+          };
+        }
         return jsonDecode(response.body);
       } else {
         return {'success': false, 'error': 'Server error: ${response.statusCode}'};
