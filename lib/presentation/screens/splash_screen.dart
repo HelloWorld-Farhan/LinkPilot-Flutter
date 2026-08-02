@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'home_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,25 +14,24 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(milliseconds: 2800), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 1.0);
-              const end = Offset.zero;
-              const curve = Curves.easeInOutCubic;
-              var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              return SlideTransition(
-                position: animation.drive(tween),
-                child: FadeTransition(
-                  opacity: animation,
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.0, 0.08),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
                   child: child,
                 ),
               );
             },
-            transitionDuration: const Duration(milliseconds: 500),
+            transitionDuration: const Duration(milliseconds: 600),
           ),
         );
       }
@@ -41,70 +41,117 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF16A34A).withOpacity(0.25),
-                    blurRadius: 40,
-                    spreadRadius: 10,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/Logo.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.link,
-                    size: 80,
-                    color: Color(0xFF16A34A),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFECECA3), // pale lime
+              Color(0xFFB5E550), // bright lime
+              Color(0xFFABC32F), // mid olive
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.dark.withOpacity(0.3),
+                      blurRadius: 40,
+                      spreadRadius: 8,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/Logo.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.link_rounded,
+                      size: 64,
+                      color: AppTheme.dark,
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'LinkPilot',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF16A34A),
-                letterSpacing: -1,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Collect · Convert · Deliver',
-              style: TextStyle(
-                fontSize: 15,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        )
-        .animate()
-        .fadeIn(duration: 800.ms)
-        .scale(
-          begin: const Offset(0.8, 0.8),
-          end: const Offset(1.0, 1.0),
-          duration: 800.ms,
-          curve: Curves.easeOutBack,
-        )
-        .slideY(
-          begin: 0.1,
-          end: 0.0,
-          duration: 800.ms,
-          curve: Curves.easeOutCubic,
+              )
+                  .animate()
+                  .scale(
+                    begin: const Offset(0.6, 0.6),
+                    duration: 700.ms,
+                    curve: Curves.easeOutBack,
+                  )
+                  .fadeIn(duration: 500.ms),
+              const SizedBox(height: 28),
+
+              // App name
+              const Text(
+                'LinkPilot',
+                style: TextStyle(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF2E3A10),
+                  letterSpacing: -1.5,
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 300.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0, delay: 300.ms, duration: 500.ms),
+
+              const SizedBox(height: 10),
+
+              // Tagline
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Text(
+                  'Collect · Convert · Deliver',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF607C3C),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 600.ms, duration: 500.ms)
+                  .slideY(begin: 0.2, end: 0, delay: 600.ms),
+
+              const SizedBox(height: 60),
+
+              // Loading indicator
+              SizedBox(
+                width: 40,
+                height: 4,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: const LinearProgressIndicator(
+                    backgroundColor: Colors.white38,
+                    color: Color(0xFF607C3C),
+                  ),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 800.ms, duration: 400.ms),
+            ],
+          ),
         ),
       ),
     );

@@ -18,30 +18,32 @@ class HomeScreen extends ConsumerWidget {
     final history = ref.watch(historyListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundWhite,
+      backgroundColor: AppTheme.bg,
       body: CustomScrollView(
         slivers: [
+          // ── Collapsing Header ────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 140,
+            expandedHeight: 160,
             floating: false,
             pinned: true,
             elevation: 0,
             scrolledUnderElevation: 0,
-            backgroundColor: AppTheme.backgroundWhite,
+            backgroundColor: AppTheme.dark,
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.pin,
+              titlePadding: EdgeInsets.zero,
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFFDCFCE7),
-                      Color(0xFFF0FDF4),
+                      Color(0xFF607C3C), // dark forest
+                      Color(0xFF809C13), // mid olive
                     ],
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -49,47 +51,41 @@ class HomeScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen,
-                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.link, color: Colors.white, size: 20),
+                          child: const Icon(Icons.link_rounded, color: Colors.white, size: 22),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
                         const Text(
                           'LinkPilot',
                           style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.textDark,
-                            letterSpacing: -0.5,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       '${history.length} report${history.length == 1 ? '' : 's'} generated',
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.primaryGreen.withOpacity(0.8),
+                        color: Colors.white.withOpacity(0.75),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              title: const Text(
-                'LinkPilot',
-                style: TextStyle(
-                  color: AppTheme.textDark,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
             ),
           ),
+
+          // ── Body ─────────────────────────────────────────────────────────
           if (history.isEmpty)
             SliverFillRemaining(
               child: Center(
@@ -97,34 +93,36 @@ class HomeScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryGreenPale,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFECECA3), Color(0xFFB5E550)],
+                        ),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.2),
+                            blurRadius: 24,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.article_outlined,
-                        size: 48,
-                        color: AppTheme.primaryGreen,
-                      ),
+                      child: const Icon(Icons.article_outlined, size: 50, color: AppTheme.dark),
                     ),
                     const SizedBox(height: 24),
                     const Text(
                       'No reports yet',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textDark,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.dark,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Tap + to create your first link report',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textGrey,
-                      ),
+                      style: TextStyle(fontSize: 14, color: AppTheme.textGrey),
                     ),
                   ],
                 ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
@@ -132,13 +130,10 @@ class HomeScreen extends ConsumerWidget {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = history[index];
-                    return _buildHistoryCard(context, ref, item, index);
-                  },
+                  (context, index) => _buildHistoryCard(context, ref, history[index], index),
                   childCount: history.length,
                 ),
               ),
@@ -146,30 +141,29 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, animation, __) => const AddLinksScreen(),
-              transitionsBuilder: (_, animation, __, child) => SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                child: child,
-              ),
+        onPressed: () => Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (_, a, __) => const AddLinksScreen(),
+            transitionsBuilder: (_, a, __, child) => SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+              child: child,
             ),
-          );
-        },
+          ),
+        ),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Report', style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: AppTheme.primaryGreen,
+        label: const Text('New Report', style: TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: AppTheme.dark,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 6,
       ).animate().fadeIn(delay: 300.ms).slideY(begin: 1.0, curve: Curves.easeOutBack),
     );
   }
 
+  // ── History Card ───────────────────────────────────────────────────────
   Widget _buildHistoryCard(BuildContext context, WidgetRef ref, HistoryItem item, int index) {
     final isSent = item.status == 'Sent';
     return Container(
@@ -177,10 +171,10 @@ class HomeScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+        border: Border.all(color: const Color(0xFFB5E550).withOpacity(0.5), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryGreen.withOpacity(0.06),
+            color: AppTheme.secondary.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -202,10 +196,12 @@ class HomeScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryGreenPale,
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFECECA3), Color(0xFFB5E550)],
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.description_outlined, color: AppTheme.primaryGreen, size: 20),
+                      child: const Icon(Icons.description_rounded, color: AppTheme.dark, size: 20),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -230,7 +226,6 @@ class HomeScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -238,23 +233,30 @@ class HomeScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: isSent
-                                ? AppTheme.primaryGreen.withOpacity(0.1)
-                                : Colors.blue.withOpacity(0.1),
+                                ? AppTheme.limeLight.withOpacity(0.25)
+                                : AppTheme.pale.withOpacity(0.6),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            item.status,
+                            isSent ? '✅ Sent' : '📄 Saved',
                             style: TextStyle(
-                              color: isSent ? AppTheme.primaryGreen : Colors.blue,
-                              fontWeight: FontWeight.w600,
+                              color: isSent ? AppTheme.dark : AppTheme.secondary,
+                              fontWeight: FontWeight.w700,
                               fontSize: 11,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         GestureDetector(
                           onTap: () => _confirmDelete(context, ref, item),
-                          child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 18),
+                          ),
                         ),
                       ],
                     ),
@@ -263,9 +265,9 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _infoChip(Icons.link_rounded, '${item.totalLinks} Links'),
+                    _chip(Icons.link_rounded, '${item.totalLinks} Links'),
                     const SizedBox(width: 8),
-                    _infoChip(Icons.email_outlined, item.recipientEmail, flex: true),
+                    Flexible(child: _chip(Icons.email_outlined, item.recipientEmail)),
                   ],
                 ),
               ],
@@ -276,28 +278,30 @@ class HomeScreen extends ConsumerWidget {
     ).animate().fadeIn(delay: (index * 80).ms).slideY(begin: 0.15);
   }
 
-  Widget _infoChip(IconData icon, String label, {bool flex = false}) {
-    Widget chip = Container(
+  Widget _chip(IconData icon, String label) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLightGrey,
+        color: AppTheme.pale.withOpacity(0.6),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.limeLight.withOpacity(0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppTheme.primaryGreen),
+          Icon(icon, size: 12, color: AppTheme.secondary),
           const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textGrey, fontWeight: FontWeight.w500),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: AppTheme.textGrey, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
     );
-    return flex ? Flexible(child: chip) : chip;
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, HistoryItem item) {
@@ -358,116 +362,116 @@ class HomeScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _HistoryDetailSheet(item: item, ref: ref),
+      builder: (_) => _HistoryDetailSheet(item: item, ref: ref),
     );
   }
 }
 
+// ── History Detail Bottom Sheet ────────────────────────────────────────────
 class _HistoryDetailSheet extends StatelessWidget {
   final HistoryItem item;
   final WidgetRef ref;
-
   const _HistoryDetailSheet({required this.item, required this.ref});
 
   @override
   Widget build(BuildContext context) {
     final isSent = item.status == 'Sent';
     return Container(
-      height: MediaQuery.of(context).size.height * 0.82,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle bar
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
+          // Header gradient strip
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF607C3C), Color(0xFF809C13)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.description_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
+                      Text(
+                        item.reportName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
-                        child: const Icon(Icons.description_rounded, color: Colors.white, size: 28),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.reportName,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: AppTheme.textDark,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isSent
-                                    ? AppTheme.primaryGreen.withOpacity(0.1)
-                                    : Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                isSent ? '✅ Sent via Email' : '📄 PDF Generated',
-                                style: TextStyle(
-                                  color: isSent ? AppTheme.primaryGreen : Colors.blue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          isSent ? '✅ Sent via Email' : '📄 PDF Generated',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
-                  // Info cards
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Info
                   _sectionCard([
                     _infoRow(Icons.access_time_rounded, 'Generated',
-                        DateFormat('EEEE, MMMM d, yyyy · h:mm a').format(item.generatedAt)),
-                    const Divider(height: 1),
+                        DateFormat('EEE, MMM d · h:mm a').format(item.generatedAt)),
+                    _divider(),
                     _infoRow(Icons.email_outlined, 'Recipient', item.recipientEmail),
-                    const Divider(height: 1),
+                    _divider(),
                     _infoRow(Icons.send_rounded, 'Sender', 'linkpilot.support@gmail.com'),
-                    const Divider(height: 1),
-                    _infoRow(Icons.link_rounded, 'Total Links', '${item.totalLinks} links included'),
+                    _divider(),
+                    _infoRow(Icons.link_rounded, 'Links', '${item.totalLinks} included'),
                   ]),
                   const SizedBox(height: 16),
 
-                  // Drive Link
+                  // Drive link buttons
                   if (item.driveLink != null) ...[
                     const Text(
                       'PDF Report',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.dark),
                     ),
                     const SizedBox(height: 10),
                     Row(
@@ -476,18 +480,20 @@ class _HistoryDetailSheet extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () async {
                               final uri = Uri.parse(item.driveLink!);
-                              if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+                              if (await canLaunchUrl(uri)) {
+                                launchUrl(uri, mode: LaunchMode.externalApplication);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                                  colors: [Color(0xFF607C3C), Color(0xFF809C13)],
                                 ),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                                    color: AppTheme.dark.withOpacity(0.3),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -497,9 +503,9 @@ class _HistoryDetailSheet extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.picture_as_pdf_rounded, color: Colors.white),
-                                  SizedBox(width: 10),
+                                  SizedBox(width: 8),
                                   Text(
-                                    'Open PDF on Drive',
+                                    'Open PDF',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w700,
@@ -518,7 +524,7 @@ class _HistoryDetailSheet extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text('Drive link copied!'),
-                                backgroundColor: AppTheme.primaryGreen,
+                                backgroundColor: AppTheme.dark,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
@@ -527,10 +533,11 @@ class _HistoryDetailSheet extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryGreenPale,
+                              color: AppTheme.pale,
                               borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppTheme.limeLight.withOpacity(0.5)),
                             ),
-                            child: const Icon(Icons.copy_rounded, color: AppTheme.primaryGreen),
+                            child: const Icon(Icons.copy_rounded, color: AppTheme.dark),
                           ),
                         ),
                       ],
@@ -541,7 +548,7 @@ class _HistoryDetailSheet extends StatelessWidget {
                   // Links list
                   const Text(
                     'Included Links',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.dark),
                   ),
                   const SizedBox(height: 10),
                   _sectionCard(
@@ -557,15 +564,17 @@ class _HistoryDetailSheet extends StatelessWidget {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreenPale,
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFECECA3), Color(0xFFB5E550)],
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Center(
                                     child: Text(
                                       '${e.key + 1}',
                                       style: const TextStyle(
-                                        color: AppTheme.primaryGreen,
-                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.dark,
+                                        fontWeight: FontWeight.w800,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -581,15 +590,16 @@ class _HistoryDetailSheet extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.link_rounded, size: 16, color: AppTheme.primaryGreen),
+                                const Icon(Icons.link_rounded, size: 16, color: AppTheme.secondary),
                               ],
                             ),
                           ),
-                          if (!isLast) const Divider(height: 1, indent: 60),
+                          if (!isLast) Divider(height: 1, indent: 60, color: AppTheme.pale),
                         ],
                       );
                     }).toList(),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -604,7 +614,7 @@ class _HistoryDetailSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+        border: Border.all(color: AppTheme.limeLight.withOpacity(0.4), width: 1.5),
       ),
       child: Column(children: children),
     );
@@ -612,17 +622,17 @@ class _HistoryDetailSheet extends StatelessWidget {
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppTheme.primaryGreen),
+          Icon(icon, size: 18, color: AppTheme.secondary),
           const SizedBox(width: 12),
           Text(label, style: const TextStyle(color: AppTheme.textGrey, fontSize: 13)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark, fontSize: 13),
+              style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.textDark, fontSize: 13),
               textAlign: TextAlign.right,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -632,4 +642,6 @@ class _HistoryDetailSheet extends StatelessWidget {
       ),
     );
   }
+
+  Widget _divider() => Divider(height: 1, color: AppTheme.pale, indent: 46);
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -213,12 +213,12 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                    colors: [AppTheme.primary, AppTheme.limeLight],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryGreen.withOpacity(0.35),
+                      color: AppTheme.primary.withOpacity(0.35),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -271,15 +271,15 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: const Text('Drive link copied!'),
-                            backgroundColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.primary,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryGreenPale,
-                        foregroundColor: AppTheme.primaryGreen,
+                        backgroundColor: AppTheme.pale,
+                        foregroundColor: AppTheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
                       ),
                       child: const Icon(Icons.copy_rounded, size: 20),
@@ -310,7 +310,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
     final history = ref.watch(historyListProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundWhite,
+      backgroundColor: AppTheme.bg,
       appBar: AppBar(
         title: const Text('New Report'),
         leading: IconButton(
@@ -324,7 +324,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
               icon: const Icon(Icons.send_rounded, size: 18),
               label: const Text('Send'),
               style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryGreen,
+                foregroundColor: AppTheme.primary,
                 textStyle: const TextStyle(fontWeight: FontWeight.w700),
               ),
               onPressed: _isLoading ? null : _generateAndSend,
@@ -378,7 +378,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                 'Sent from: linkpilot.support@gmail.com',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.primaryGreen.withOpacity(0.8),
+                  color: AppTheme.primary.withOpacity(0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -404,7 +404,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                   style: const TextStyle(fontSize: 12, color: AppTheme.textGrey),
                 ),
                 value: _sendEmail,
-                activeColor: AppTheme.primaryGreen,
+                activeColor: AppTheme.primary,
                 onChanged: (val) => setState(() => _sendEmail = val),
               ),
             ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
@@ -423,13 +423,13 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGreenPale,
+                          color: AppTheme.pale,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           '+ $count',
                           style: const TextStyle(
-                            color: AppTheme.primaryGreen,
+                            color: AppTheme.primary,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                           ),
@@ -454,14 +454,14 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
             Container(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                  colors: [AppTheme.primary, AppTheme.limeLight],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryGreen.withOpacity(0.4),
+                    color: AppTheme.primary.withOpacity(0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -503,7 +503,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   Widget _buildLabel(String text, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppTheme.primaryGreen),
+        Icon(icon, size: 16, color: AppTheme.primary),
         const SizedBox(width: 6),
         Text(
           text,
@@ -527,7 +527,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
           border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryGreen.withOpacity(0.04),
+              color: AppTheme.primary.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -544,14 +544,14 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreenPale,
+                    color: AppTheme.pale,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Text(
                       '${idx + 1}',
                       style: const TextStyle(
-                        color: AppTheme.primaryGreen,
+                        color: AppTheme.primary,
                         fontWeight: FontWeight.w700,
                         fontSize: 12,
                       ),
@@ -577,10 +577,10 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryGreenPale,
+                      color: AppTheme.pale,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.open_in_new_rounded, size: 16, color: AppTheme.primaryGreen),
+                    child: const Icon(Icons.open_in_new_rounded, size: 16, color: AppTheme.primary),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -605,8 +605,8 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                 hintText: 'Company / Link Name',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                prefixIcon: const Icon(Icons.business_rounded, size: 18, color: AppTheme.primaryGreen),
-                fillColor: AppTheme.surfaceLightGrey,
+                prefixIcon: const Icon(Icons.business_rounded, size: 18, color: AppTheme.primary),
+                fillColor: AppTheme.pale,
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -629,8 +629,8 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                 hintText: 'https://...',
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                prefixIcon: const Icon(Icons.link_rounded, size: 18, color: AppTheme.primaryGreen),
-                fillColor: AppTheme.surfaceLightGrey,
+                prefixIcon: const Icon(Icons.link_rounded, size: 18, color: AppTheme.primary),
+                fillColor: AppTheme.pale,
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -661,7 +661,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   }
 }
 
-// ─── Processing Sheet ───────────────────────────────────────────────────────
+// â”€â”€â”€ Processing Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class _ProcessingSheet extends StatefulWidget {
   final String reportName;
@@ -778,7 +778,7 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                    colors: [AppTheme.primary, AppTheme.limeLight],
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -800,7 +800,7 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
                     widget.reportName,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.primaryGreen.withOpacity(0.8),
+                      color: AppTheme.primary.withOpacity(0.8),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -839,15 +839,15 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDone
-            ? AppTheme.primaryGreenPale
+            ? AppTheme.pale
             : isActive
-                ? AppTheme.surfaceLightGrey
+                ? AppTheme.pale
                 : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         border: isActive
-            ? Border.all(color: AppTheme.primaryGreen.withOpacity(0.3), width: 1.5)
+            ? Border.all(color: AppTheme.primary.withOpacity(0.3), width: 1.5)
             : isDone
-                ? Border.all(color: AppTheme.primaryGreen.withOpacity(0.2))
+                ? Border.all(color: AppTheme.primary.withOpacity(0.2))
                 : null,
       ),
       child: Row(
@@ -858,9 +858,9 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
             height: 40,
             decoration: BoxDecoration(
               color: isDone
-                  ? AppTheme.primaryGreen
+                  ? AppTheme.primary
                   : isActive
-                      ? AppTheme.primaryGreenPale
+                      ? AppTheme.pale
                       : const Color(0xFFF3F4F6),
               shape: BoxShape.circle,
             ),
@@ -874,12 +874,12 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
                           padding: const EdgeInsets.all(10.0),
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppTheme.primaryGreen,
+                            color: AppTheme.primary,
                           ),
                         ),
                       )
                     : Icon(step.icon,
-                        color: isPending ? Colors.grey[400] : AppTheme.primaryGreen, size: 18),
+                        color: isPending ? Colors.grey[400] : AppTheme.primary, size: 18),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -920,3 +920,6 @@ class _Step {
 
   const _Step({required this.icon, required this.label, required this.detail});
 }
+
+
+
