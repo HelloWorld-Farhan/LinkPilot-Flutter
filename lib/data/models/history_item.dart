@@ -19,4 +19,6 @@ class HistoryItem {
   late String status; // e.g. "Sent", "Generated", "Failed"
 
   late List<String> companies;
+
+  List<String>? urls;
 }

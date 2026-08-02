@@ -466,8 +466,10 @@ class _HistoryDetailSheet extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () async {
                               final uri = Uri.parse(item.driveLink!);
-                              if (await canLaunchUrl(uri)) {
-                                launchUrl(uri, mode: LaunchMode.externalApplication);
+                              try {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                debugPrint("Could not launch $uri: $e");
                               }
                             },
                             child: Container(
@@ -531,6 +533,7 @@ class _HistoryDetailSheet extends StatelessWidget {
                   _sectionCard(
                     item.companies.asMap().entries.map((e) {
                       final isLast = e.key == item.companies.length - 1;
+                      final url = (item.urls != null && item.urls!.length > e.key) ? item.urls![e.key] : null;
                       return Column(children: [
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -554,7 +557,48 @@ class _HistoryDetailSheet extends StatelessWidget {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600, color: AppTheme.textDark)),
                             ),
-                            const Icon(Icons.link_rounded, size: 16, color: AppTheme.teal),
+                            if (url != null) ...[
+                              GestureDetector(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: url));
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: const Text('Link copied!'),
+                                    backgroundColor: AppTheme.forest,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ));
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.mint.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.copy_rounded, size: 18, color: AppTheme.forest),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () async {
+                                  final uri = Uri.parse(url);
+                                  try {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  } catch (err) {
+                                    debugPrint("Could not launch $uri: $err");
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.forest.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.open_in_new_rounded, size: 18, color: AppTheme.forest),
+                                ),
+                              ),
+                            ] else ...[
+                              const Icon(Icons.link_rounded, size: 16, color: AppTheme.teal),
+                            ],
                           ]),
                         ),
                         if (!isLast) Divider(height: 1, color: AppTheme.mint.withOpacity(0.4), indent: 60),

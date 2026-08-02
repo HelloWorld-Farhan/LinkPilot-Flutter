@@ -189,7 +189,8 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       ..totalLinks = validLinks.length
       ..driveLink = driveLink
       ..status = _sendEmail ? 'Sent' : 'Generated'
-      ..companies = validLinks.map((e) => e['company']!).toList();
+      ..companies = validLinks.map((e) => e['company']!).toList()
+      ..urls = validLinks.map((e) => e['url']!).toList();
 
     await ref.read(historyListProvider.notifier).addHistory(historyItem);
 

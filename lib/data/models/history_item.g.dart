@@ -51,6 +51,11 @@ const HistoryItemSchema = CollectionSchema(
       id: 6,
       name: r'totalLinks',
       type: IsarType.long,
+    ),
+    r'urls': PropertySchema(
+      id: 7,
+      name: r'urls',
+      type: IsarType.stringList,
     )
   },
   estimateSize: _historyItemEstimateSize,
@@ -89,6 +94,18 @@ int _historyItemEstimateSize(
   bytesCount += 3 + object.recipientEmail.length * 3;
   bytesCount += 3 + object.reportName.length * 3;
   bytesCount += 3 + object.status.length * 3;
+  {
+    final list = object.urls;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
   return bytesCount;
 }
 
@@ -105,6 +122,7 @@ void _historyItemSerialize(
   writer.writeString(offsets[4], object.reportName);
   writer.writeString(offsets[5], object.status);
   writer.writeLong(offsets[6], object.totalLinks);
+  writer.writeStringList(offsets[7], object.urls);
 }
 
 HistoryItem _historyItemDeserialize(
@@ -122,6 +140,7 @@ HistoryItem _historyItemDeserialize(
   object.reportName = reader.readString(offsets[4]);
   object.status = reader.readString(offsets[5]);
   object.totalLinks = reader.readLong(offsets[6]);
+  object.urls = reader.readStringList(offsets[7]);
   return object;
 }
 
@@ -146,6 +165,8 @@ P _historyItemDeserializeProp<P>(
       return (reader.readString(offset)) as P;
     case 6:
       return (reader.readLong(offset)) as P;
+    case 7:
+      return (reader.readStringList(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -1193,6 +1214,247 @@ extension HistoryItemQueryFilter
       ));
     });
   }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition> urlsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'urls',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'urls',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'urls',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'urls',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'urls',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'urls',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'urls',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition> urlsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      urlsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'urls',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
 }
 
 extension HistoryItemQueryObject
@@ -1413,6 +1675,12 @@ extension HistoryItemQueryWhereDistinct
       return query.addDistinctBy(r'totalLinks');
     });
   }
+
+  QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctByUrls() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'urls');
+    });
+  }
 }
 
 extension HistoryItemQueryProperty
@@ -1463,6 +1731,12 @@ extension HistoryItemQueryProperty
   QueryBuilder<HistoryItem, int, QQueryOperations> totalLinksProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'totalLinks');
+    });
+  }
+
+  QueryBuilder<HistoryItem, List<String>?, QQueryOperations> urlsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'urls');
     });
   }
 }
