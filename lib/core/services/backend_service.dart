@@ -27,63 +27,83 @@ class BackendService {
       'Accept': 'application/json, text/plain, */*',
     };
 
+    final client = http.Client();
     try {
-      // Google Apps Script returns 302 redirects on POST.
-      // We must manually follow redirects to preserve the POST body.
-      final client = http.Client();
+      // Step 1: POST to GAS - do NOT follow redirects
+      final postRequest = http.Request('POST', Uri.parse(_gasUrl))
+        ..headers.addAll(headers)
+        ..followRedirects = false
+        ..body = payload;
+
+      final postStreamed = await client.send(postRequest);
+      final postResponse = await http.Response.fromStream(postStreamed);
+
       String? responseBody;
 
-      try {
-        var targetUri = Uri.parse(_gasUrl);
+      // Step 2: GAS always returns 302. Follow the redirect as GET (RFC 7231 standard)
+      if (postResponse.statusCode >= 300 && postResponse.statusCode < 400) {
+        final location = postResponse.headers['location'];
+        if (location != null && location.isNotEmpty) {
+          // Follow redirect as GET — this is how browsers handle 302 from POST
+          Uri redirectUri = Uri.parse(location);
+          for (int i = 0; i < 5; i++) {
+            final getRequest = http.Request('GET', redirectUri)
+              ..headers['User-Agent'] = headers['User-Agent']!
+              ..followRedirects = false;
 
-        for (int attempt = 0; attempt < 6; attempt++) {
-          final request = http.Request('POST', targetUri)
-            ..headers.addAll(headers)
-            ..followRedirects = false
-            ..body = payload;
+            final getStreamed = await client.send(getRequest);
+            final getResponse = await http.Response.fromStream(getStreamed);
 
-          final streamed = await client.send(request);
-          final response = await http.Response.fromStream(streamed);
-
-          // Follow redirect manually (preserving POST body)
-          if (response.statusCode == 301 ||
-              response.statusCode == 302 ||
-              response.statusCode == 303 ||
-              response.statusCode == 307 ||
-              response.statusCode == 308) {
-            final location = response.headers['location'];
-            if (location != null && location.isNotEmpty) {
-              targetUri = Uri.parse(location);
-              continue; // follow redirect
+            if (getResponse.statusCode >= 300 && getResponse.statusCode < 400) {
+              final nextLocation = getResponse.headers['location'];
+              if (nextLocation != null && nextLocation.isNotEmpty) {
+                redirectUri = Uri.parse(nextLocation);
+                continue;
+              }
             }
+            responseBody = getResponse.body;
+            break;
           }
-
-          // We got a real response
-          responseBody = response.body;
-          break;
         }
-      } finally {
-        client.close();
+      } else {
+        // Direct response (no redirect)
+        responseBody = postResponse.body;
       }
 
-      if (responseBody == null || responseBody.isEmpty) {
-        return {'success': false, 'error': 'No response from server. Please check your Apps Script deployment.'};
+      if (responseBody == null || responseBody.trim().isEmpty) {
+        return {
+          'success': false,
+          'error': 'No response from server. Check Apps Script deployment settings.'
+        };
       }
 
       final trimmed = responseBody.trim();
 
-      // If still HTML, give a clear actionable error
+      // If JSON found anywhere in the response, extract it
+      final jsonStart = trimmed.indexOf('{');
+      final jsonEnd = trimmed.lastIndexOf('}');
+      if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
+        try {
+          final extracted = trimmed.substring(jsonStart, jsonEnd + 1);
+          return jsonDecode(extracted);
+        } catch (_) {
+          // fall through
+        }
+      }
+
       if (trimmed.startsWith('<')) {
         return {
           'success': false,
           'error':
-              'Deployment error: Go to script.google.com → Deploy → Manage deployments → ensure "Execute as: Me" and "Who has access: Anyone (not just Google users)".'
+              'Google Apps Script deployment error.\n\nPlease ensure:\n• Execute as: Me\n• Who has access: Anyone (not "Anyone with Google account")\n• Run testAuth() function once to grant permissions.'
         };
       }
 
       return jsonDecode(trimmed);
     } catch (e) {
       return {'success': false, 'error': 'Connection error: ${e.toString()}'};
+    } finally {
+      client.close();
     }
   }
 }

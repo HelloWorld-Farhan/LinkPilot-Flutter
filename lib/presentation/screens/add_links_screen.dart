@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -661,9 +661,9 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   }
 }
 
-// â”€â”€â”€ Processing Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——————————————————————————————————————————————————————————————————————————————
 
-class _ProcessingSheet extends StatefulWidget {
+class _ProcessingSheet extends ConsumerStatefulWidget {
   final String reportName;
   final String recipientEmail;
   final bool sendEmail;
@@ -681,47 +681,69 @@ class _ProcessingSheet extends StatefulWidget {
   });
 
   @override
-  State<_ProcessingSheet> createState() => _ProcessingSheetState();
+  ConsumerState<_ProcessingSheet> createState() => _ProcessingSheetState();
 }
 
-class _ProcessingSheetState extends State<_ProcessingSheet>
+class _Step {
+  final IconData icon;
+  final String label;
+  final String detail;
+  const _Step({required this.icon, required this.label, required this.detail});
+}
+
+class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
     with TickerProviderStateMixin {
   int _currentStep = 0;
   bool _isDone = false;
   bool _isError = false;
   String? _errorMsg;
   String? _driveLink;
+  final ScrollController _scrollController = ScrollController();
 
-  final List<_Step> _steps = [
-    _Step(icon: Icons.link_rounded, label: 'Packaging your links...', detail: 'Compiling all URLs into a structured report'),
-    _Step(icon: Icons.picture_as_pdf_rounded, label: 'Generating PDF...', detail: 'Converting your links into a beautiful PDF'),
-    _Step(icon: Icons.cloud_upload_rounded, label: 'Uploading to Drive...', detail: 'Saving your PDF securely to Google Drive'),
-    _Step(icon: Icons.email_rounded, label: 'Sending email...', detail: 'Dispatching report to recipient'),
-    _Step(icon: Icons.check_circle_rounded, label: 'All done!', detail: 'Your report is ready'),
-  ];
+  late final List<_Step> _steps;
 
   @override
   void initState() {
     super.initState();
+    _steps = [
+      const _Step(icon: Icons.link_rounded,          label: 'Packaging links',       detail: 'Compiling all your URLs into a structured report'),
+      const _Step(icon: Icons.picture_as_pdf_rounded, label: 'Generating PDF',        detail: 'Converting your links into a beautiful PDF document'),
+      const _Step(icon: Icons.cloud_upload_rounded,   label: 'Uploading to Drive',    detail: 'Saving your PDF securely to Google Drive'),
+      if (widget.sendEmail)
+        const _Step(icon: Icons.email_rounded,        label: 'Sending email',         detail: 'Dispatching report to your recipient'),
+      const _Step(icon: Icons.check_circle_rounded,   label: 'All done!',             detail: 'Your report is ready to view'),
+    ];
     _runProcess();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToStep(int step) {
+    final itemHeight = 88.0;
+    final offset = (step * itemHeight).clamp(0.0, double.infinity);
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
   Future<void> _runProcess() async {
-    // Simulate visual steps then call API
-    for (int i = 0; i < (_steps.length - 2); i++) {
+    // Animate through steps visually first
+    for (int i = 0; i < _steps.length - 1; i++) {
       if (!mounted) return;
       setState(() => _currentStep = i);
-      await Future.delayed(const Duration(milliseconds: 700));
+      _scrollToStep(i);
+      await Future.delayed(const Duration(milliseconds: 750));
     }
 
-    // Email step (only show if sending)
-    if (!mounted) return;
-    if (widget.sendEmail) {
-      setState(() => _currentStep = 3);
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-
-    // Now actually call the backend
+    // Actually call backend
     final response = await BackendService.generateAndProcess(
       reportName: widget.reportName,
       recipientEmail: widget.recipientEmail,
@@ -737,6 +759,7 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
         _currentStep = _steps.length - 1;
         _isDone = true;
       });
+      _scrollToStep(_steps.length - 1);
       await Future.delayed(const Duration(milliseconds: 900));
       if (mounted) widget.onComplete(_driveLink, true, null);
     } else {
@@ -752,136 +775,136 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.55,
+      height: MediaQuery.of(context).size.height * 0.52,
       decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF091413), Color(0xFF285A48)],
+        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
       ),
-      padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 14),
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.mint.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.mint.withOpacity(0.3)),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.mint, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Processing Report',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white),
+                    ),
+                    Text(
+                      widget.reportName,
+                      style: TextStyle(fontSize: 12, color: AppTheme.mint.withOpacity(0.8)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.forest, AppTheme.mint],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Processing Report',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textDark,
-                    ),
-                  ),
-                  Text(
-                    widget.reportName,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.forest.withOpacity(0.8),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
+
+          // Steps list (scrollable)
           Expanded(
             child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              physics: const BouncingScrollPhysics(),
               itemCount: _steps.length,
-              itemBuilder: (context, index) {
-                return _buildStepRow(index);
-              },
+              itemBuilder: (ctx, index) => _buildStep(index),
             ),
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildStepRow(int index) {
+  Widget _buildStep(int index) {
     final step = _steps[index];
-    final isActive = index == _currentStep;
-    final isDone = index < _currentStep || _isDone;
+    final isActive = index == _currentStep && !_isDone && !_isError;
+    final isDone = (index < _currentStep) || _isDone;
     final isPending = index > _currentStep && !_isDone;
-    final isEmailStep = index == 3;
-    final shouldShow = isEmailStep ? widget.sendEmail : true;
-
-    if (!shouldShow) return const SizedBox.shrink();
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutCubic,
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDone
-            ? AppTheme.mint
+            ? AppTheme.mint.withOpacity(0.12)
             : isActive
-                ? AppTheme.mint
+                ? Colors.white.withOpacity(0.08)
                 : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: isActive
-            ? Border.all(color: AppTheme.forest.withOpacity(0.3), width: 1.5)
+            ? Border.all(color: AppTheme.mint.withOpacity(0.4), width: 1.5)
             : isDone
-                ? Border.all(color: AppTheme.forest.withOpacity(0.2))
+                ? Border.all(color: AppTheme.teal.withOpacity(0.3))
                 : null,
       ),
       child: Row(
         children: [
+          // Icon circle
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 40,
-            height: 40,
+            duration: const Duration(milliseconds: 400),
+            width: 44, height: 44,
             decoration: BoxDecoration(
-              color: isDone
-                  ? AppTheme.forest
-                  : isActive
-                      ? AppTheme.mint
-                      : const Color(0xFFF3F4F6),
               shape: BoxShape.circle,
+              color: isDone
+                  ? AppTheme.teal
+                  : isActive
+                      ? AppTheme.forest
+                      : Colors.white.withOpacity(0.07),
+              boxShadow: (isDone || isActive)
+                  ? [BoxShadow(color: AppTheme.teal.withOpacity(0.3), blurRadius: 12)]
+                  : null,
             ),
             child: isDone
                 ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                    .animate().scale(duration: 300.ms, curve: Curves.elasticOut)
                 : isActive
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.forest,
-                          ),
+                    ? Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: AppTheme.mint,
                         ),
                       )
                     : Icon(step.icon,
-                        color: isPending ? Colors.grey[400] : AppTheme.forest, size: 18),
+                        color: isPending ? Colors.white24 : AppTheme.mint,
+                        size: 18),
           ),
           const SizedBox(width: 14),
+
+          // Labels
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -890,35 +913,29 @@ class _ProcessingSheetState extends State<_ProcessingSheet>
                   step.label,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isPending ? AppTheme.textGrey : AppTheme.textDark,
+                    fontWeight: FontWeight.w700,
+                    color: isPending ? Colors.white30 : Colors.white,
                   ),
                 ),
                 if (isActive || isDone)
                   Text(
                     step.detail,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.textGrey),
-                  ),
+                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.55)),
+                  )
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideX(begin: 0.05, end: 0),
               ],
             ),
           ),
+
+          // Step number
+          if (isPending)
+            Text('${index + 1}', style: const TextStyle(color: Colors.white24, fontWeight: FontWeight.w700)),
         ],
       ),
-    ).animate(
-      effects: [
-        if (isActive || isDone)
-          FadeEffect(duration: 400.ms)
-      ],
     );
   }
-}
-
-class _Step {
-  final IconData icon;
-  final String label;
-  final String detail;
-
-  const _Step({required this.icon, required this.label, required this.detail});
 }
 
 
