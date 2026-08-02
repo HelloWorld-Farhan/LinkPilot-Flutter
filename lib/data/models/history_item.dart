@@ -6,15 +6,17 @@ part 'history_item.g.dart';
 class HistoryItem {
   Id id = Isar.autoIncrement;
 
+  late String reportName;
+
   late DateTime generatedAt;
 
-  late String senderEmail;
+  late String recipientEmail;
 
   late int totalLinks;
 
-  late String driveLink;
+  String? driveLink;
 
-  late String status; // e.g. "Sent", "Failed"
+  late String status; // e.g. "Sent", "Generated", "Failed"
 
   late List<String> companies;
 }

@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
-import 'data/models/link_item.dart';
 import 'data/models/history_item.dart';
 import 'presentation/providers/database_provider.dart';
 
@@ -24,7 +23,7 @@ void main() async {
   // Init Isar
   final dir = await getApplicationDocumentsDirectory();
   final isar = await Isar.open(
-    [LinkItemSchema, HistoryItemSchema],
+    [HistoryItemSchema],
     directory: dir.path,
   );
 

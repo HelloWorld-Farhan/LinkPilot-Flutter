@@ -32,18 +32,23 @@ const HistoryItemSchema = CollectionSchema(
       name: r'generatedAt',
       type: IsarType.dateTime,
     ),
-    r'senderEmail': PropertySchema(
+    r'recipientEmail': PropertySchema(
       id: 3,
-      name: r'senderEmail',
+      name: r'recipientEmail',
+      type: IsarType.string,
+    ),
+    r'reportName': PropertySchema(
+      id: 4,
+      name: r'reportName',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'status',
       type: IsarType.string,
     ),
     r'totalLinks': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'totalLinks',
       type: IsarType.long,
     )
@@ -75,8 +80,14 @@ int _historyItemEstimateSize(
       bytesCount += value.length * 3;
     }
   }
-  bytesCount += 3 + object.driveLink.length * 3;
-  bytesCount += 3 + object.senderEmail.length * 3;
+  {
+    final value = object.driveLink;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.recipientEmail.length * 3;
+  bytesCount += 3 + object.reportName.length * 3;
   bytesCount += 3 + object.status.length * 3;
   return bytesCount;
 }
@@ -90,9 +101,10 @@ void _historyItemSerialize(
   writer.writeStringList(offsets[0], object.companies);
   writer.writeString(offsets[1], object.driveLink);
   writer.writeDateTime(offsets[2], object.generatedAt);
-  writer.writeString(offsets[3], object.senderEmail);
-  writer.writeString(offsets[4], object.status);
-  writer.writeLong(offsets[5], object.totalLinks);
+  writer.writeString(offsets[3], object.recipientEmail);
+  writer.writeString(offsets[4], object.reportName);
+  writer.writeString(offsets[5], object.status);
+  writer.writeLong(offsets[6], object.totalLinks);
 }
 
 HistoryItem _historyItemDeserialize(
@@ -103,12 +115,13 @@ HistoryItem _historyItemDeserialize(
 ) {
   final object = HistoryItem();
   object.companies = reader.readStringList(offsets[0]) ?? [];
-  object.driveLink = reader.readString(offsets[1]);
+  object.driveLink = reader.readStringOrNull(offsets[1]);
   object.generatedAt = reader.readDateTime(offsets[2]);
   object.id = id;
-  object.senderEmail = reader.readString(offsets[3]);
-  object.status = reader.readString(offsets[4]);
-  object.totalLinks = reader.readLong(offsets[5]);
+  object.recipientEmail = reader.readString(offsets[3]);
+  object.reportName = reader.readString(offsets[4]);
+  object.status = reader.readString(offsets[5]);
+  object.totalLinks = reader.readLong(offsets[6]);
   return object;
 }
 
@@ -122,7 +135,7 @@ P _historyItemDeserializeProp<P>(
     case 0:
       return (reader.readStringList(offset) ?? []) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
       return (reader.readDateTime(offset)) as P;
     case 3:
@@ -130,6 +143,8 @@ P _historyItemDeserializeProp<P>(
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -455,8 +470,26 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      driveLinkIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'driveLink',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      driveLinkIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'driveLink',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
       driveLinkEqualTo(
-    String value, {
+    String? value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -470,7 +503,7 @@ extension HistoryItemQueryFilter
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
       driveLinkGreaterThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -486,7 +519,7 @@ extension HistoryItemQueryFilter
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
       driveLinkLessThan(
-    String value, {
+    String? value, {
     bool include = false,
     bool caseSensitive = true,
   }) {
@@ -502,8 +535,8 @@ extension HistoryItemQueryFilter
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
       driveLinkBetween(
-    String lower,
-    String upper, {
+    String? lower,
+    String? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     bool caseSensitive = true,
@@ -700,13 +733,13 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailEqualTo(
+      recipientEmailEqualTo(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -714,7 +747,7 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailGreaterThan(
+      recipientEmailGreaterThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -722,7 +755,7 @@ extension HistoryItemQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -730,7 +763,7 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailLessThan(
+      recipientEmailLessThan(
     String value, {
     bool include = false,
     bool caseSensitive = true,
@@ -738,7 +771,7 @@ extension HistoryItemQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -746,7 +779,7 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailBetween(
+      recipientEmailBetween(
     String lower,
     String upper, {
     bool includeLower = true,
@@ -755,7 +788,7 @@ extension HistoryItemQueryFilter
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -766,13 +799,13 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailStartsWith(
+      recipientEmailStartsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -780,13 +813,13 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailEndsWith(
+      recipientEmailEndsWith(
     String value, {
     bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -794,10 +827,10 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailContains(String value, {bool caseSensitive = true}) {
+      recipientEmailContains(String value, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: value,
         caseSensitive: caseSensitive,
       ));
@@ -805,10 +838,10 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailMatches(String pattern, {bool caseSensitive = true}) {
+      recipientEmailMatches(String pattern, {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.matches(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         wildcard: pattern,
         caseSensitive: caseSensitive,
       ));
@@ -816,20 +849,156 @@ extension HistoryItemQueryFilter
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailIsEmpty() {
+      recipientEmailIsEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'senderEmail',
+        property: r'recipientEmail',
         value: '',
       ));
     });
   }
 
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      senderEmailIsNotEmpty() {
+      recipientEmailIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'senderEmail',
+        property: r'recipientEmail',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'reportName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'reportName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'reportName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reportName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      reportNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'reportName',
         value: '',
       ));
     });
@@ -1058,15 +1227,28 @@ extension HistoryItemQuerySortBy
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortBySenderEmail() {
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByRecipientEmail() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'senderEmail', Sort.asc);
+      return query.addSortBy(r'recipientEmail', Sort.asc);
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortBySenderEmailDesc() {
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy>
+      sortByRecipientEmailDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'senderEmail', Sort.desc);
+      return query.addSortBy(r'recipientEmail', Sort.desc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByReportName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reportName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByReportNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reportName', Sort.desc);
     });
   }
 
@@ -1133,15 +1315,28 @@ extension HistoryItemQuerySortThenBy
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenBySenderEmail() {
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenByRecipientEmail() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'senderEmail', Sort.asc);
+      return query.addSortBy(r'recipientEmail', Sort.asc);
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenBySenderEmailDesc() {
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy>
+      thenByRecipientEmailDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'senderEmail', Sort.desc);
+      return query.addSortBy(r'recipientEmail', Sort.desc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenByReportName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reportName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenByReportNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reportName', Sort.desc);
     });
   }
 
@@ -1191,10 +1386,18 @@ extension HistoryItemQueryWhereDistinct
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctBySenderEmail(
+  QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctByRecipientEmail(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'senderEmail', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'recipientEmail',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctByReportName(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'reportName', caseSensitive: caseSensitive);
     });
   }
 
@@ -1227,7 +1430,7 @@ extension HistoryItemQueryProperty
     });
   }
 
-  QueryBuilder<HistoryItem, String, QQueryOperations> driveLinkProperty() {
+  QueryBuilder<HistoryItem, String?, QQueryOperations> driveLinkProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'driveLink');
     });
@@ -1239,9 +1442,15 @@ extension HistoryItemQueryProperty
     });
   }
 
-  QueryBuilder<HistoryItem, String, QQueryOperations> senderEmailProperty() {
+  QueryBuilder<HistoryItem, String, QQueryOperations> recipientEmailProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'senderEmail');
+      return query.addPropertyName(r'recipientEmail');
+    });
+  }
+
+  QueryBuilder<HistoryItem, String, QQueryOperations> reportNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'reportName');
     });
   }
 
