@@ -18,19 +18,17 @@ class _SplashScreenState extends State<SplashScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0.0, 0.08),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-                  child: child,
-                ),
-              );
-            },
+            pageBuilder: (_, animation, __) => const HomeScreen(),
+            transitionsBuilder: (_, animation, __, child) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.06),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                child: child,
+              ),
+            ),
             transitionDuration: const Duration(milliseconds: 600),
           ),
         );
@@ -46,21 +44,21 @@ class _SplashScreenState extends State<SplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFECECA3), // pale lime
-              Color(0xFFB5E550), // bright lime
-              Color(0xFFABC32F), // mid olive
+              Color(0xFF091413), // ink
+              Color(0xFF285A48), // forest
+              Color(0xFF408A71), // teal
             ],
-            stops: [0.0, 0.5, 1.0],
+            stops: [0.0, 0.55, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
+              // Logo circle with glow
               Container(
                 width: 130,
                 height: 130,
@@ -69,10 +67,14 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.dark.withOpacity(0.3),
-                      blurRadius: 40,
-                      spreadRadius: 8,
-                      offset: const Offset(0, 8),
+                      color: AppTheme.mint.withOpacity(0.4),
+                      blurRadius: 50,
+                      spreadRadius: 10,
+                    ),
+                    BoxShadow(
+                      color: AppTheme.teal.withOpacity(0.3),
+                      blurRadius: 25,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
@@ -80,76 +82,78 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Image.asset(
                     'assets/Logo.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
+                    errorBuilder: (_, __, ___) => const Icon(
                       Icons.link_rounded,
                       size: 64,
-                      color: AppTheme.dark,
+                      color: AppTheme.forest,
                     ),
                   ),
                 ),
               )
                   .animate()
                   .scale(
-                    begin: const Offset(0.6, 0.6),
-                    duration: 700.ms,
+                    begin: const Offset(0.5, 0.5),
+                    duration: 800.ms,
                     curve: Curves.easeOutBack,
                   )
-                  .fadeIn(duration: 500.ms),
-              const SizedBox(height: 28),
+                  .fadeIn(duration: 600.ms),
+
+              const SizedBox(height: 32),
 
               // App name
               const Text(
                 'LinkPilot',
                 style: TextStyle(
-                  fontSize: 38,
+                  fontSize: 40,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF2E3A10),
+                  color: Colors.white,
                   letterSpacing: -1.5,
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 300.ms, duration: 600.ms)
-                  .slideY(begin: 0.2, end: 0, delay: 300.ms, duration: 500.ms),
+                  .fadeIn(delay: 350.ms, duration: 600.ms)
+                  .slideY(begin: 0.2, end: 0, delay: 350.ms),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
-              // Tagline
+              // Tagline pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.35),
+                  color: AppTheme.mint.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: AppTheme.mint.withOpacity(0.35)),
                 ),
                 child: const Text(
                   'Collect · Convert · Deliver',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF607C3C),
+                    color: AppTheme.mint,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
                   ),
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 600.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0, delay: 600.ms),
+                  .fadeIn(delay: 650.ms, duration: 500.ms)
+                  .slideY(begin: 0.2, end: 0, delay: 650.ms),
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 70),
 
-              // Loading indicator
+              // Thin loading bar
               SizedBox(
-                width: 40,
+                width: 48,
                 height: 4,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(2),
-                  child: const LinearProgressIndicator(
-                    backgroundColor: Colors.white38,
-                    color: Color(0xFF607C3C),
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.white.withOpacity(0.15),
+                    color: AppTheme.mint,
                   ),
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 800.ms, duration: 400.ms),
+                  .fadeIn(delay: 900.ms, duration: 400.ms),
             ],
           ),
         ),

@@ -2,53 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // ── Palette ─────────────────────────────────────────────────────────────
-  static const Color bg        = Color(0xFFF5F5DC); // warm off-white base
-  static const Color pale      = Color(0xFFECECA3); // #ececa3 – lightest lime
-  static const Color limeLight = Color(0xFFB5E550); // #b5e550 – bright lime
-  static const Color primary   = Color(0xFFABC32F); // #abc32f – primary olive
-  static const Color secondary = Color(0xFF809C13); // #809c13 – mid olive
-  static const Color dark      = Color(0xFF607C3C); // #607c3c – forest green
-  static const Color textDark  = Color(0xFF2E3A10); // very dark for body text
-  static const Color textGrey  = Color(0xFF6B7542); // olive-grey for subtitles
-  static const Color cardWhite = Color(0xFFFFFFFF);
+  // ── Palette from image ──────────────────────────────────────────────────
+  static const Color ink      = Color(0xFF091413); // near-black
+  static const Color forest   = Color(0xFF285A48); // dark forest green
+  static const Color teal     = Color(0xFF408A71); // medium teal
+  static const Color mint     = Color(0xFFB0E4CC); // light mint
+  static const Color bg       = Color(0xFFF2FBF7); // very light mint bg
+  static const Color cardBg   = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF091413);
+  static const Color textGrey = Color(0xFF5A7A6E);
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme(
         brightness: Brightness.light,
-        primary: primary,
+        primary: forest,
         onPrimary: Colors.white,
-        secondary: limeLight,
-        onSecondary: textDark,
-        error: Colors.redAccent,
+        secondary: teal,
+        onSecondary: Colors.white,
+        error: const Color(0xFFCF6679),
         onError: Colors.white,
         background: bg,
         onBackground: textDark,
-        surface: cardWhite,
+        surface: cardBg,
         onSurface: textDark,
       ),
       scaffoldBackgroundColor: bg,
       textTheme: GoogleFonts.interTextTheme().apply(
         bodyColor: textDark,
-        displayColor: dark,
+        displayColor: ink,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: dark),
+        iconTheme: const IconThemeData(color: forest),
         titleTextStyle: GoogleFonts.inter(
-          color: dark,
+          color: ink,
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: forest,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -59,55 +58,56 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: dark,
+        backgroundColor: forest,
         foregroundColor: Colors.white,
+        elevation: 6,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: pale,
-        labelStyle: GoogleFonts.inter(color: dark, fontWeight: FontWeight.w700),
+        backgroundColor: mint,
+        labelStyle: GoogleFonts.inter(color: forest, fontWeight: FontWeight.w700),
         side: BorderSide.none,
         shape: const StadiumBorder(),
       ),
       cardTheme: CardThemeData(
-        color: cardWhite,
+        color: cardBg,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: MaterialStateProperty.resolveWith((s) =>
-            s.contains(MaterialState.selected) ? dark : Colors.grey),
+            s.contains(MaterialState.selected) ? forest : Colors.grey),
         trackColor: MaterialStateProperty.resolveWith((s) =>
             s.contains(MaterialState.selected)
-                ? limeLight.withOpacity(0.5)
+                ? mint
                 : Colors.grey.withOpacity(0.2)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: pale.withOpacity(0.5),
+        fillColor: mint.withOpacity(0.25),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: limeLight.withOpacity(0.4), width: 1.5),
+          borderSide: BorderSide(color: mint.withOpacity(0.6), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: secondary, width: 2),
+          borderSide: const BorderSide(color: teal, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          borderSide: const BorderSide(color: Color(0xFFCF6679), width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+          borderSide: const BorderSide(color: Color(0xFFCF6679), width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         labelStyle: GoogleFonts.inter(color: textGrey),
-        hintStyle: GoogleFonts.inter(color: textGrey.withOpacity(0.7), fontSize: 14),
-        prefixIconColor: secondary,
+        hintStyle: GoogleFonts.inter(color: textGrey.withOpacity(0.6), fontSize: 14),
+        prefixIconColor: teal,
       ),
     );
   }
