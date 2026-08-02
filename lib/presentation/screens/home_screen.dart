@@ -39,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
               itemCount: history.length,
               itemBuilder: (context, index) {
                 final item = history[index];
-                return _buildHistoryCard(context, item, index);
+                return _buildHistoryCard(context, ref, item, index);
               },
             ),
       floatingActionButton: FloatingActionButton.extended(
@@ -55,7 +55,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context, HistoryItem item, int index) {
+  Widget _buildHistoryCard(BuildContext context, WidgetRef ref, HistoryItem item, int index) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,

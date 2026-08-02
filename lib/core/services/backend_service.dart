@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class BackendService {
-  static const String _gasUrl = 'https://script.google.com/macros/s/AKfycbyoLOqYiRRz9xFdR3ao4hKJki2X7phw4_jBuM6cwikYSZN8F39S9tNaDwj3PUHvKrLv/exec';
+  static const String _gasUrl = 'https://script.google.com/macros/s/AKfycbx6ey8v-VNnWZSe0Kdf1NGlK-drRpDY2Vsv73v9B__ZvjmwZ3HY1jf_bv_j4uiWlTXB/exec';
 
   static Future<Map<String, dynamic>> generateAndProcess({
     required String reportName,
