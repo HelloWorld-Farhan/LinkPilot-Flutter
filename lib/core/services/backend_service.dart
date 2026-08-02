@@ -12,41 +12,78 @@ class BackendService {
     required bool sendEmail,
     required List<Map<String, String>> links,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse(_gasUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-        body: jsonEncode({
-          'reportName': reportName,
-          'senderEmail': senderEmail,
-          'recipientEmail': recipientEmail,
-          'sendEmail': sendEmail,
-          'links': links,
-        }),
-      );
+    final payload = jsonEncode({
+      'reportName': reportName,
+      'senderEmail': senderEmail,
+      'recipientEmail': recipientEmail,
+      'sendEmail': sendEmail,
+      'links': links,
+    });
 
-      if (response.statusCode == 200 || response.statusCode == 302) {
-        final body = response.body.trim();
-        if (body.startsWith('<')) {
-          return {
-            'success': false,
-            'error':
-                'Server returned an HTML page. Please ensure your Google Apps Script is deployed with "Execute as: Me" and "Who has access: Anyone".',
-          };
+    final headers = {
+      'Content-Type': 'application/json',
+      'User-Agent':
+          'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      'Accept': 'application/json, text/plain, */*',
+    };
+
+    try {
+      // Google Apps Script returns 302 redirects on POST.
+      // We must manually follow redirects to preserve the POST body.
+      final client = http.Client();
+      String? responseBody;
+
+      try {
+        var targetUri = Uri.parse(_gasUrl);
+
+        for (int attempt = 0; attempt < 6; attempt++) {
+          final request = http.Request('POST', targetUri)
+            ..headers.addAll(headers)
+            ..followRedirects = false
+            ..body = payload;
+
+          final streamed = await client.send(request);
+          final response = await http.Response.fromStream(streamed);
+
+          // Follow redirect manually (preserving POST body)
+          if (response.statusCode == 301 ||
+              response.statusCode == 302 ||
+              response.statusCode == 303 ||
+              response.statusCode == 307 ||
+              response.statusCode == 308) {
+            final location = response.headers['location'];
+            if (location != null && location.isNotEmpty) {
+              targetUri = Uri.parse(location);
+              continue; // follow redirect
+            }
+          }
+
+          // We got a real response
+          responseBody = response.body;
+          break;
         }
-        return jsonDecode(body);
-      } else {
+      } finally {
+        client.close();
+      }
+
+      if (responseBody == null || responseBody.isEmpty) {
+        return {'success': false, 'error': 'No response from server. Please check your Apps Script deployment.'};
+      }
+
+      final trimmed = responseBody.trim();
+
+      // If still HTML, give a clear actionable error
+      if (trimmed.startsWith('<')) {
         return {
           'success': false,
-          'error': 'Server error: ${response.statusCode}',
+          'error':
+              'Deployment error: Go to script.google.com → Deploy → Manage deployments → ensure "Execute as: Me" and "Who has access: Anyone (not just Google users)".'
         };
       }
+
+      return jsonDecode(trimmed);
     } catch (e) {
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': 'Connection error: ${e.toString()}'};
     }
   }
 }
