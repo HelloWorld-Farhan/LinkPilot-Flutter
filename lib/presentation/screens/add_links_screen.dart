@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/url_parser.dart';
 import '../../core/services/backend_service.dart';
 import '../../data/models/history_item.dart';
@@ -32,11 +33,11 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   final _emailController = TextEditingController();
   final _reportNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _sendEmail = true;
   bool _isLoading = false;
   String? _reportNameError;
-  
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -56,6 +57,17 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   }
 
   void _removeRow(int index) {
+    if (_controllers.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('You need at least one link entry.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
     setState(() {
       _controllers[index].dispose();
       _controllers.removeAt(index);
@@ -64,7 +76,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
 
   void _validateReportName(String value, List<HistoryItem> history) {
     if (value.isEmpty) {
-      setState(() => _reportNameError = 'Required');
+      setState(() => _reportNameError = 'Report name is required');
       return;
     }
     final exists = history.any((h) => h.reportName.toLowerCase() == value.toLowerCase());
@@ -74,153 +86,221 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   }
 
   Future<void> _generateAndSend() async {
+    FocusScope.of(context).unfocus();
+    final history = ref.read(historyListProvider);
+
+    if (_reportNameController.text.isEmpty) {
+      setState(() => _reportNameError = 'Report name is required');
+      return;
+    }
     if (_reportNameError != null) return;
-    
-    if (_formKey.currentState?.validate() ?? false) {
-      final history = ref.read(historyListProvider);
-      if (history.any((h) => h.reportName.toLowerCase() == _reportNameController.text.toLowerCase())) {
-        setState(() => _reportNameError = 'A report with this name already exists');
-        return;
-      }
 
-      // Validate all URLs and Names uniquely
-      List<Map<String, String>> validLinks = [];
-      Set<String> uniqueLinkNames = {};
+    if (history.any((h) =>
+        h.reportName.toLowerCase() == _reportNameController.text.toLowerCase())) {
+      setState(() => _reportNameError = 'A report with this name already exists');
+      return;
+    }
 
-      for (var entry in _controllers) {
-        if (entry.urlController.text.isNotEmpty || entry.nameController.text.isNotEmpty) {
-          final name = entry.nameController.text.trim();
-          if (name.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please provide a name for all links')),
-            );
-            return;
-          }
-          if (uniqueLinkNames.contains(name.toLowerCase())) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Duplicate link name found: $name. All names must be unique.')),
-            );
-            return;
-          }
-          uniqueLinkNames.add(name.toLowerCase());
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-          if (!UrlParser.isValidUrl(entry.urlController.text)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Invalid URL: ${entry.urlController.text}')),
-            );
-            return;
-          }
-          validLinks.add({
-            'company': name,
-            'url': entry.urlController.text,
-          });
-        }
-      }
+    // Validate links
+    final List<Map<String, String>> validLinks = [];
+    final Set<String> uniqueNames = {};
 
-      if (validLinks.isEmpty) {
+    for (var entry in _controllers) {
+      final name = entry.nameController.text.trim();
+      final url = entry.urlController.text.trim();
+
+      if (name.isEmpty && url.isEmpty) continue;
+
+      if (name.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please add at least one valid link')),
+          const SnackBar(content: Text('Please provide a name for all links')),
         );
         return;
       }
 
-      setState(() => _isLoading = true);
+      if (uniqueNames.contains(name.toLowerCase())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Duplicate link name: "$name". All names must be unique.')),
+        );
+        return;
+      }
+      uniqueNames.add(name.toLowerCase());
 
-      final response = await BackendService.generateAndProcess(
+      if (!UrlParser.isValidUrl(url)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid URL for "$name". Please enter a valid URL.')),
+        );
+        return;
+      }
+      validLinks.add({'company': name, 'url': url});
+    }
+
+    if (validLinks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one valid link')),
+      );
+      return;
+    }
+
+    // Show animated progress sheet
+    _showProgressSheet(validLinks);
+  }
+
+  void _showProgressSheet(List<Map<String, String>> validLinks) {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ProcessingSheet(
         reportName: _reportNameController.text,
         recipientEmail: _emailController.text,
         sendEmail: _sendEmail,
-        links: validLinks,
-      );
-
-      setState(() => _isLoading = false);
-
-      if (response['success'] == true) {
-        final driveLink = response['driveLink'] as String?;
-        
-        // Save to Database
-        final isar = ref.read(isarProvider);
-        final historyItem = HistoryItem()
-          ..reportName = _reportNameController.text
-          ..recipientEmail = _emailController.text
-          ..generatedAt = DateTime.now()
-          ..totalLinks = validLinks.length
-          ..driveLink = driveLink
-          ..status = _sendEmail ? 'Sent' : 'Generated'
-          ..companies = validLinks.map((e) => e['company']!).toList();
-          
-        await isar.writeTxn(() async {
-          await isar.historyItems.put(historyItem);
-        });
-
-        if (!mounted) return;
-
-        if (_sendEmail) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Report generated and email sent successfully!')),
-          );
-          Navigator.pop(context);
-        } else {
-          _showDriveLinkDialog(driveLink);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: ${response['error'] ?? 'Unknown error'}')),
-          );
-        }
-      }
-    }
+        validLinks: validLinks,
+        ref: ref,
+        onComplete: (String? driveLink, bool success, String? error) {
+          Navigator.pop(ctx); // close sheet
+          if (success) {
+            _onSuccess(driveLink, validLinks);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(error ?? 'An unknown error occurred.'),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
-  void _showDriveLinkDialog(String? driveLink) {
-    if (driveLink == null) return;
-    
+  void _onSuccess(String? driveLink, List<Map<String, String>> validLinks) async {
+    // Save to DB via provider (handles both isar write + state update)
+    final historyItem = HistoryItem()
+      ..reportName = _reportNameController.text
+      ..recipientEmail = _emailController.text
+      ..generatedAt = DateTime.now()
+      ..totalLinks = validLinks.length
+      ..driveLink = driveLink
+      ..status = _sendEmail ? 'Sent' : 'Generated'
+      ..companies = validLinks.map((e) => e['company']!).toList();
+
+    await ref.read(historyListProvider.notifier).addHistory(historyItem);
+
+    if (!mounted) return;
+    _showSuccessDialog(driveLink);
+  }
+
+  void _showSuccessDialog(String? driveLink) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('PDF Generated Successfully'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Your PDF report is ready on Google Drive.'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryGreen.withOpacity(0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
+              ).animate().scale(begin: const Offset(0, 0), duration: 400.ms, curve: Curves.elasticOut),
+              const SizedBox(height: 20),
+              const Text(
+                'Report Ready!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
               ),
-              child: SelectableText(driveLink, style: const TextStyle(fontSize: 12)),
-            )
-          ],
+              const SizedBox(height: 8),
+              Text(
+                _sendEmail
+                    ? 'Your PDF was generated and emailed to ${_emailController.text}'
+                    : 'Your PDF has been saved to Google Drive.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textGrey, height: 1.5),
+              ),
+              const SizedBox(height: 24),
+              if (driveLink != null) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                        label: const Text('Open PDF'),
+                        onPressed: () async {
+                          final uri = Uri.parse(driveLink);
+                          if (await canLaunchUrl(uri)) {
+                            launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                          Navigator.pop(ctx);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: driveLink));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Drive link copied!'),
+                            backgroundColor: AppTheme.primaryGreen,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreenPale,
+                        foregroundColor: AppTheme.primaryGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+                      ),
+                      child: const Icon(Icons.copy_rounded, size: 20),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: driveLink));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
-            },
-            child: const Text('Copy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              launchUrl(Uri.parse(driveLink));
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to home
-            },
-            child: const Text('Preview'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text('Done'),
-          ),
-        ],
       ),
     );
   }
@@ -230,178 +310,613 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
     final history = ref.watch(historyListProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundWhite,
       appBar: AppBar(
-        title: const Text('Add Links'),
+        title: const Text('New Report'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.only(right: 16.0),
-              child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: _generateAndSend,
-            )
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              icon: const Icon(Icons.send_rounded, size: 18),
+              label: const Text('Send'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryGreen,
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              onPressed: _isLoading ? null : _generateAndSend,
+            ),
+          ),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator()) 
-        : Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(24),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // Report Name
+            _buildLabel('Report Name', Icons.folder_special_rounded),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _reportNameController,
+              decoration: InputDecoration(
+                hintText: 'e.g. Job Applications Oct 2025',
+                errorText: _reportNameError,
+                prefixIcon: const Icon(Icons.drive_file_rename_outline_rounded),
+              ),
+              onChanged: (val) => _validateReportName(val, history),
+              validator: (val) {
+                if (val == null || val.isEmpty) return 'Report name is required';
+                return _reportNameError;
+              },
+            ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1),
+            const SizedBox(height: 20),
+
+            // Recipient Email
+            _buildLabel('Recipient Email', Icons.email_rounded),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                hintText: 'Where to send the report?',
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+              ),
+              validator: (val) {
+                if (val == null || val.isEmpty) return 'Recipient email is required';
+                if (!UrlParser.isValidEmail(val)) return 'Enter a valid email address';
+                return null;
+              },
+            ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                'Sent from: linkpilot.support@gmail.com',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.primaryGreen.withOpacity(0.8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Toggle
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+              ),
+              child: SwitchListTile(
+                title: const Text(
+                  'Send Email Report',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textDark),
+                ),
+                subtitle: Text(
+                  _sendEmail
+                      ? 'PDF will be emailed to recipient'
+                      : 'Only PDF will be saved to Drive',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.textGrey),
+                ),
+                value: _sendEmail,
+                activeColor: AppTheme.primaryGreen,
+                onChanged: (val) => setState(() => _sendEmail = val),
+              ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.1),
+            const SizedBox(height: 28),
+
+            // Links section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextFormField(
-                  controller: _reportNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Report / Collection Name',
-                    prefixIcon: const Icon(Icons.folder_special_outlined),
-                    errorText: _reportNameError,
+                _buildLabel('Links', Icons.link_rounded),
+                Wrap(
+                  spacing: 6,
+                  children: [1, 2, 5, 10].map((count) {
+                    return GestureDetector(
+                      onTap: () => _addRows(count),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryGreenPale,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '+ $count',
+                          style: const TextStyle(
+                            color: AppTheme.primaryGreen,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ).animate().fadeIn(delay: 200.ms),
+            const SizedBox(height: 12),
+
+            ..._controllers.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final data = entry.value;
+              return _buildLinkRow(idx, data);
+            }),
+
+            const SizedBox(height: 32),
+
+            // Generate button
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryGreen.withOpacity(0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
-                  onChanged: (val) => _validateReportName(val, history),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Required';
-                    return _reportNameError;
-                  },
-                ).animate().fadeIn().slideY(),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Recipient Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    hintText: 'Where should we send this?',
-                  ),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Required';
-                    if (!UrlParser.isValidEmail(val)) return 'Enter a valid email';
-                    return null;
-                  },
-                ).animate().fadeIn().slideY(),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Send Email Report'),
-                  subtitle: const Text('If disabled, only the PDF will be generated on Drive.'),
-                  value: _sendEmail,
-                  onChanged: (val) {
-                    setState(() => _sendEmail = val);
-                  },
-                ).animate().fadeIn().slideY(),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _generateAndSend,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Links',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        ActionChip(
-                          label: const Text('+ 1'),
-                          onPressed: () => _addRows(1),
-                        ),
-                        ActionChip(
-                          label: const Text('+ 2'),
-                          onPressed: () => _addRows(2),
-                        ),
-                        ActionChip(
-                          label: const Text('+ 5'),
-                          onPressed: () => _addRows(5),
-                        ),
-                        ActionChip(
-                          label: const Text('+ 10'),
-                          onPressed: () => _addRows(10),
-                        ),
-                      ],
+                    Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 10),
+                    Text(
+                      'Generate & Process',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                ..._controllers.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  var data = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: data.nameController,
-                            decoration: InputDecoration(
-                              hintText: 'Name (e.g. Google)',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                            validator: (val) {
-                              if (data.urlController.text.isNotEmpty && (val == null || val.isEmpty)) {
-                                return 'Required';
-                              }
-                              return null;
-                            },
+              ),
+            ).animate().fadeIn(delay: 250.ms).slideY(begin: 0.2),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppTheme.primaryGreen),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textDark,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLinkRow(int idx, LinkEntryData data) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryGreen.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row: number badge + action icons
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreenPale,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${idx + 1}',
+                      style: const TextStyle(
+                        color: AppTheme.primaryGreen,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    if (data.urlController.text.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PreviewScreen(url: data.urlController.text),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a URL first')),
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryGreenPale,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.open_in_new_rounded, size: 16, color: AppTheme.primaryGreen),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _removeRow(idx),
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.redAccent),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Name field - full width so whole name shows
+            TextFormField(
+              controller: data.nameController,
+              decoration: InputDecoration(
+                hintText: 'Company / Link Name',
+                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                prefixIcon: const Icon(Icons.business_rounded, size: 18, color: AppTheme.primaryGreen),
+                fillColor: AppTheme.surfaceLightGrey,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+              validator: (val) {
+                if (data.urlController.text.isNotEmpty && (val == null || val.isEmpty)) {
+                  return 'Name required';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            // URL field - full width
+            TextFormField(
+              controller: data.urlController,
+              decoration: InputDecoration(
+                hintText: 'https://...',
+                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                prefixIcon: const Icon(Icons.link_rounded, size: 18, color: AppTheme.primaryGreen),
+                fillColor: AppTheme.surfaceLightGrey,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(fontSize: 13, color: AppTheme.textDark),
+              keyboardType: TextInputType.url,
+              onChanged: (val) {
+                if (val.isNotEmpty && data.nameController.text.isEmpty) {
+                  final name = UrlParser.extractCompanyName(val);
+                  if (name.isNotEmpty) {
+                    setState(() => data.nameController.text = name);
+                  }
+                }
+              },
+              validator: (val) {
+                if (data.nameController.text.isNotEmpty && (val == null || val.isEmpty)) {
+                  return 'URL required';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.05),
+    );
+  }
+}
+
+// ─── Processing Sheet ───────────────────────────────────────────────────────
+
+class _ProcessingSheet extends StatefulWidget {
+  final String reportName;
+  final String recipientEmail;
+  final bool sendEmail;
+  final List<Map<String, String>> validLinks;
+  final WidgetRef ref;
+  final void Function(String? driveLink, bool success, String? error) onComplete;
+
+  const _ProcessingSheet({
+    required this.reportName,
+    required this.recipientEmail,
+    required this.sendEmail,
+    required this.validLinks,
+    required this.ref,
+    required this.onComplete,
+  });
+
+  @override
+  State<_ProcessingSheet> createState() => _ProcessingSheetState();
+}
+
+class _ProcessingSheetState extends State<_ProcessingSheet>
+    with TickerProviderStateMixin {
+  int _currentStep = 0;
+  bool _isDone = false;
+  bool _isError = false;
+  String? _errorMsg;
+  String? _driveLink;
+
+  final List<_Step> _steps = [
+    _Step(icon: Icons.link_rounded, label: 'Packaging your links...', detail: 'Compiling all URLs into a structured report'),
+    _Step(icon: Icons.picture_as_pdf_rounded, label: 'Generating PDF...', detail: 'Converting your links into a beautiful PDF'),
+    _Step(icon: Icons.cloud_upload_rounded, label: 'Uploading to Drive...', detail: 'Saving your PDF securely to Google Drive'),
+    _Step(icon: Icons.email_rounded, label: 'Sending email...', detail: 'Dispatching report to recipient'),
+    _Step(icon: Icons.check_circle_rounded, label: 'All done!', detail: 'Your report is ready'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _runProcess();
+  }
+
+  Future<void> _runProcess() async {
+    // Simulate visual steps then call API
+    for (int i = 0; i < (_steps.length - 2); i++) {
+      if (!mounted) return;
+      setState(() => _currentStep = i);
+      await Future.delayed(const Duration(milliseconds: 700));
+    }
+
+    // Email step (only show if sending)
+    if (!mounted) return;
+    if (widget.sendEmail) {
+      setState(() => _currentStep = 3);
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    // Now actually call the backend
+    final response = await BackendService.generateAndProcess(
+      reportName: widget.reportName,
+      recipientEmail: widget.recipientEmail,
+      sendEmail: widget.sendEmail,
+      links: widget.validLinks,
+    );
+
+    if (!mounted) return;
+
+    if (response['success'] == true) {
+      _driveLink = response['driveLink'] as String?;
+      setState(() {
+        _currentStep = _steps.length - 1;
+        _isDone = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 900));
+      if (mounted) widget.onComplete(_driveLink, true, null);
+    } else {
+      setState(() {
+        _isError = true;
+        _errorMsg = response['error']?.toString() ?? 'Unknown error';
+      });
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (mounted) widget.onComplete(null, false, _errorMsg);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.55,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: const EdgeInsets.fromLTRB(28, 20, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryGreen, AppTheme.primaryGreenLight],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Processing Report',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                  Text(
+                    widget.reportName,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.primaryGreen.withOpacity(0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _steps.length,
+              itemBuilder: (context, index) {
+                return _buildStepRow(index);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepRow(int index) {
+    final step = _steps[index];
+    final isActive = index == _currentStep;
+    final isDone = index < _currentStep || _isDone;
+    final isPending = index > _currentStep && !_isDone;
+    final isEmailStep = index == 3;
+    final shouldShow = isEmailStep ? widget.sendEmail : true;
+
+    if (!shouldShow) return const SizedBox.shrink();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: isDone
+            ? AppTheme.primaryGreenPale
+            : isActive
+                ? AppTheme.surfaceLightGrey
+                : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        border: isActive
+            ? Border.all(color: AppTheme.primaryGreen.withOpacity(0.3), width: 1.5)
+            : isDone
+                ? Border.all(color: AppTheme.primaryGreen.withOpacity(0.2))
+                : null,
+      ),
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDone
+                  ? AppTheme.primaryGreen
+                  : isActive
+                      ? AppTheme.primaryGreenPale
+                      : const Color(0xFFF3F4F6),
+              shape: BoxShape.circle,
+            ),
+            child: isDone
+                ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                : isActive
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryGreen,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            controller: data.urlController,
-                            decoration: const InputDecoration(
-                              hintText: 'https://...',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                            onChanged: (val) {
-                              if (val.isNotEmpty && data.nameController.text.isEmpty) {
-                                setState(() {
-                                  data.nameController.text = UrlParser.extractCompanyName(val);
-                                });
-                              }
-                            },
-                            validator: (val) {
-                              if (data.nameController.text.isNotEmpty && (val == null || val.isEmpty)) {
-                                return 'Required';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.remove_red_eye_outlined),
-                          onPressed: () {
-                            if (data.urlController.text.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PreviewScreen(url: data.urlController.text),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter a URL first')),
-                              );
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                          onPressed: () => _removeRow(idx),
-                        ),
-                      ],
-                    ).animate().fadeIn(duration: 300.ms).slideX(begin: 0.1),
-                  );
-                }),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _generateAndSend,
-                  child: const Text('Generate & Process'),
-                ).animate().fadeIn().slideY(begin: 0.2),
+                      )
+                    : Icon(step.icon,
+                        color: isPending ? Colors.grey[400] : AppTheme.primaryGreen, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  step.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isPending ? AppTheme.textGrey : AppTheme.textDark,
+                  ),
+                ),
+                if (isActive || isDone)
+                  Text(
+                    step.detail,
+                    style: const TextStyle(fontSize: 12, color: AppTheme.textGrey),
+                  ),
               ],
             ),
           ),
+        ],
+      ),
+    ).animate(
+      effects: [
+        if (isActive || isDone)
+          FadeEffect(duration: 400.ms)
+      ],
     );
   }
+}
+
+class _Step {
+  final IconData icon;
+  final String label;
+  final String detail;
+
+  const _Step({required this.icon, required this.label, required this.detail});
 }

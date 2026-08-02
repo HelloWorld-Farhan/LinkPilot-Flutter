@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: const Color(0xFF16A34A).withOpacity(0.25),
                     blurRadius: 40,
                     spreadRadius: 10,
                   ),
@@ -66,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   errorBuilder: (context, error, stackTrace) => const Icon(
                     Icons.link,
                     size: 80,
-                    color: Colors.blue,
+                    color: Color(0xFF16A34A),
                   ),
                 ),
               ),
@@ -77,15 +77,15 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2563EB),
+                color: Color(0xFF16A34A),
                 letterSpacing: -1,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Automating your link management',
+              'Collect · Convert · Deliver',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 color: Colors.grey,
                 fontWeight: FontWeight.w500,
               ),
