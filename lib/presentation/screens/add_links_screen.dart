@@ -349,10 +349,17 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                           flex: 3,
                           child: TextFormField(
                             controller: data.urlController,
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               hintText: 'https://...',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             ),
+                            onChanged: (val) {
+                              if (val.isNotEmpty && data.nameController.text.isEmpty) {
+                                setState(() {
+                                  data.nameController.text = UrlParser.extractCompany(val);
+                                });
+                              }
+                            },
                             validator: (val) {
                               if (data.nameController.text.isNotEmpty && (val == null || val.isEmpty)) {
                                 return 'Required';
