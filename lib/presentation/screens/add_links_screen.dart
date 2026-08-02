@@ -105,7 +105,6 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
 
     // Validate links
     final List<Map<String, String>> validLinks = [];
-    final Set<String> uniqueNames = {};
 
     for (var entry in _controllers) {
       final name = entry.nameController.text.trim();
@@ -113,27 +112,6 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
 
       if (name.isEmpty && url.isEmpty) continue;
 
-      if (name.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please provide a name for all links')),
-        );
-        return;
-      }
-
-      if (uniqueNames.contains(name.toLowerCase())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Duplicate link name: "$name". All names must be unique.')),
-        );
-        return;
-      }
-      uniqueNames.add(name.toLowerCase());
-
-      if (!UrlParser.isValidUrl(url)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid URL for "$name". Please enter a valid URL.')),
-        );
-        return;
-      }
       validLinks.add({'company': name, 'url': url});
     }
 
@@ -651,6 +629,9 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
               validator: (val) {
                 if (data.nameController.text.isNotEmpty && (val == null || val.isEmpty)) {
                   return 'URL required';
+                }
+                if (val != null && val.isNotEmpty && !UrlParser.isValidUrl(val)) {
+                  return 'Please enter a valid URL';
                 }
                 return null;
               },
