@@ -14,3 +14,5 @@ class LinkItem {
 
   late DateTime createdAt;
 }
+
+// force rebuild

@@ -22,3 +22,5 @@ class HistoryItem {
 
   List<String>? urls;
 }
+
+// force rebuild

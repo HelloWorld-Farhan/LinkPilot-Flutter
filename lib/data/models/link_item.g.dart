@@ -15,7 +15,7 @@ extension GetLinkItemCollection on Isar {
 
 const LinkItemSchema = CollectionSchema(
   name: r'LinkItem',
-  id: 1798989918329652736,
+  id: 1798989918329652813,
   properties: {
     r'companyName': PropertySchema(
       id: 0,
