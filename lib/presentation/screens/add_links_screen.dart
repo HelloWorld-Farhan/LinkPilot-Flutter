@@ -142,23 +142,17 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
         onComplete: (String? driveLink, bool success, String? error) {
           Navigator.pop(ctx); // close sheet
           if (success) {
-            _onSuccess(driveLink, validLinks);
+            _onSuccess(driveLink, validLinks, isError: false);
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(error ?? 'An unknown error occurred.'),
-                backgroundColor: Colors.redAccent,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            );
+            // Force save to history because email might have sent correctly
+            _onSuccess(driveLink, validLinks, isError: true, errorMessage: error);
           }
         },
       ),
     );
   }
 
-  void _onSuccess(String? driveLink, List<Map<String, String>> validLinks) async {
+  void _onSuccess(String? driveLink, List<Map<String, String>> validLinks, {bool isError = false, String? errorMessage}) async {
     // Save to DB via provider (handles both isar write + state update)
     final historyItem = HistoryItem()
       ..reportName = _reportNameController.text
@@ -166,14 +160,28 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       ..generatedAt = DateTime.now()
       ..totalLinks = validLinks.length
       ..driveLink = driveLink
-      ..status = _sendEmail ? 'Sent' : 'Generated'
+      ..status = isError ? 'Error (Saved)' : (_sendEmail ? 'Sent' : 'Generated')
       ..companies = validLinks.map((e) => e['company']!).toList()
       ..urls = validLinks.map((e) => e['url']!).toList();
 
     await ref.read(historyListProvider.notifier).addHistory(historyItem);
 
     if (!mounted) return;
-    _showSuccessDialog(driveLink);
+
+    if (isError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage ?? 'An unknown error occurred, but history was saved.'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      Navigator.pop(context);
+    } else {
+      _showSuccessDialog(driveLink);
+    }
   }
 
   void _showSuccessDialog(String? driveLink) {
