@@ -92,10 +92,10 @@ class BackendService {
       }
 
       if (trimmed.startsWith('<')) {
+        String snippet = trimmed.length > 200 ? trimmed.substring(0, 200) : trimmed;
         return {
           'success': false,
-          'error':
-              'Google Apps Script deployment error.\n\nPlease ensure:\n• Execute as: Me\n• Who has access: Anyone (not "Anyone with Google account")\n• Run testAuth() function once to grant permissions.'
+          'error': 'Server returned HTML instead of JSON: $snippet'
         };
       }
 
