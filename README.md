@@ -1,7 +1,7 @@
 # 📬 LinkPilot – Complete AI Development Prompt
 
 <p align="center">
-  <img src="assets/Logo.png" width="120" alt="LinkPilot Logo" />
+  <img src="assets/logo.png" width="120" alt="LinkPilot Logo" />
 </p>
 
 <p align="center">

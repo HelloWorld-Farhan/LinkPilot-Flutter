@@ -33,6 +33,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   final _emailController = TextEditingController();
   final _reportNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final ScrollController _mainScrollController = ScrollController();
 
   bool _sendEmail = true;
   bool _isLoading = false;
@@ -42,6 +43,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   void dispose() {
     _emailController.dispose();
     _reportNameController.dispose();
+    _mainScrollController.dispose();
     for (var entry in _controllers) {
       entry.dispose();
     }
@@ -101,7 +103,14 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       return;
     }
 
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _mainScrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
 
     // Validate links
     final List<Map<String, String>> validLinks = [];
@@ -180,7 +189,17 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       );
       Navigator.pop(context);
     } else {
-      _showSuccessDialog(driveLink);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Report generated successfully!'),
+          backgroundColor: AppTheme.forest,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      // Auto-redirect to home
+      Navigator.pop(context);
     }
   }
 
@@ -322,6 +341,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
+          controller: _mainScrollController,
           padding: const EdgeInsets.all(20),
           children: [
             // Report Name
@@ -398,35 +418,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
             const SizedBox(height: 28),
 
             // Links section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildLabel('Links', Icons.link_rounded),
-                Wrap(
-                  spacing: 6,
-                  children: [1, 2, 5, 10].map((count) {
-                    return GestureDetector(
-                      onTap: () => _addRows(count),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(
-                          color: AppTheme.mint,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '+ $count',
-                          style: const TextStyle(
-                            color: AppTheme.forest,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ).animate().fadeIn(delay: 200.ms),
+            _buildLabel('Links', Icons.link_rounded).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 12),
 
             ..._controllers.asMap().entries.map((entry) {
@@ -633,13 +625,13 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                     setState(() => data.nameController.text = name);
                   }
                 }
+                if (val.isNotEmpty && idx == _controllers.length - 1) {
+                  _addRows(1);
+                }
               },
               validator: (val) {
                 if (data.nameController.text.isNotEmpty && (val == null || val.isEmpty)) {
                   return 'URL required';
-                }
-                if (val != null && val.isNotEmpty && !UrlParser.isValidUrl(val)) {
-                  return 'Please enter a valid URL';
                 }
                 return null;
               },
@@ -718,7 +710,7 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         offset,
-        duration: const Duration(milliseconds: 500),
+        duration: const Duration(milliseconds: 800),
         curve: Curves.easeOutCubic,
       );
     }
@@ -730,7 +722,7 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
       if (!mounted) return;
       setState(() => _currentStep = i);
       _scrollToStep(i);
-      await Future.delayed(const Duration(milliseconds: 750));
+      await Future.delayed(const Duration(milliseconds: 1500));
     }
 
     // Actually call backend
