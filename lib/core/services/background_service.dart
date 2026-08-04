@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:isar/isar.dart';
@@ -52,6 +53,8 @@ void callbackDispatcher() {
 
 class BackgroundService {
   static void initialize() {
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+
     Workmanager().initialize(
       callbackDispatcher,
       isInDebugMode: false,
