@@ -20,7 +20,7 @@ class HistoryItem {
 
   late List<String> companies;
 
-  List<String>? urls;
+  List<String> urls = [];
 }
 
 // force rebuild

@@ -94,16 +94,11 @@ int _historyItemEstimateSize(
   bytesCount += 3 + object.recipientEmail.length * 3;
   bytesCount += 3 + object.reportName.length * 3;
   bytesCount += 3 + object.status.length * 3;
+  bytesCount += 3 + object.urls.length * 3;
   {
-    final list = object.urls;
-    if (list != null) {
-      bytesCount += 3 + list.length * 3;
-      {
-        for (var i = 0; i < list.length; i++) {
-          final value = list[i];
-          bytesCount += value.length * 3;
-        }
-      }
+    for (var i = 0; i < object.urls.length; i++) {
+      final value = object.urls[i];
+      bytesCount += value.length * 3;
     }
   }
   return bytesCount;
@@ -140,7 +135,7 @@ HistoryItem _historyItemDeserialize(
   object.reportName = reader.readString(offsets[4]);
   object.status = reader.readString(offsets[5]);
   object.totalLinks = reader.readLong(offsets[6]);
-  object.urls = reader.readStringList(offsets[7]);
+  object.urls = reader.readStringList(offsets[7]) ?? [];
   return object;
 }
 
@@ -166,7 +161,7 @@ P _historyItemDeserializeProp<P>(
     case 6:
       return (reader.readLong(offset)) as P;
     case 7:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -1215,23 +1210,6 @@ extension HistoryItemQueryFilter
     });
   }
 
-  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition> urlsIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'urls',
-      ));
-    });
-  }
-
-  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
-      urlsIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'urls',
-      ));
-    });
-  }
-
   QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
       urlsElementEqualTo(
     String value, {
@@ -1734,7 +1712,7 @@ extension HistoryItemQueryProperty
     });
   }
 
-  QueryBuilder<HistoryItem, List<String>?, QQueryOperations> urlsProperty() {
+  QueryBuilder<HistoryItem, List<String>, QQueryOperations> urlsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'urls');
     });
