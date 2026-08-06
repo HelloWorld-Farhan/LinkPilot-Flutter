@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -35,9 +36,36 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   final _formKey = GlobalKey<FormState>();
   final ScrollController _mainScrollController = ScrollController();
 
+  List<String> _savedEmails = [];
   bool _sendEmail = true;
   bool _isLoading = false;
   String? _reportNameError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedEmails();
+  }
+
+  Future<void> _loadSavedEmails() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _savedEmails = prefs.getStringList('saved_emails') ?? [];
+    });
+  }
+
+  Future<void> _saveEmail(String email) async {
+    if (email.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final emails = prefs.getStringList('saved_emails') ?? [];
+    if (!emails.contains(email)) {
+      emails.insert(0, email); // Add to top
+      await prefs.setStringList('saved_emails', emails);
+      setState(() {
+        _savedEmails = emails;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -162,6 +190,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   }
 
   void _onSuccess(String? driveLink, List<Map<String, String>> validLinks, {bool isError = false, String? errorMessage}) async {
+    _saveEmail(_emailController.text);
     // Save to DB via provider (handles both isar write + state update)
     final historyItem = HistoryItem()
       ..reportName = _reportNameController.text
@@ -365,17 +394,96 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
             // Recipient Email
             _buildLabel('Recipient Email', Icons.email_rounded),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                hintText: 'Where to send the report?',
-                prefixIcon: Icon(Icons.alternate_email_rounded),
-              ),
-              validator: (val) {
-                if (val == null || val.isEmpty) return 'Recipient email is required';
-                if (!UrlParser.isValidEmail(val)) return 'Enter a valid email address';
-                return null;
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return _savedEmails;
+                }
+                return _savedEmails.where((String option) {
+                  return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                });
+              },
+              onSelected: (String selection) {
+                _emailController.text = selection;
+              },
+              fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
+                // Keep _emailController in sync
+                fieldTextEditingController.addListener(() {
+                  _emailController.text = fieldTextEditingController.text;
+                });
+                if (fieldTextEditingController.text != _emailController.text && !fieldFocusNode.hasFocus) {
+                  fieldTextEditingController.text = _emailController.text;
+                }
+                return TextFormField(
+                  controller: fieldTextEditingController,
+                  focusNode: fieldFocusNode,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    hintText: 'Where to send the report?',
+                    prefixIcon: Icon(Icons.alternate_email_rounded),
+                  ),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Recipient email is required';
+                    if (!UrlParser.isValidEmail(val)) return 'Enter a valid email address';
+                    return null;
+                  },
+                );
+              },
+              optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 8.0,
+                    shadowColor: AppTheme.forest.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: MediaQuery.of(context).size.width - 40,
+                      constraints: const BoxConstraints(maxHeight: 220),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+                      ),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        separatorBuilder: (context, index) => Divider(color: Colors.grey[100], height: 1),
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return InkWell(
+                            onTap: () => onSelected(option),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.mint.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.history_rounded, size: 16, color: AppTheme.forest),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    option,
+                                    style: const TextStyle(
+                                      color: AppTheme.textDark,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
               },
             ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
             const SizedBox(height: 4),
@@ -705,15 +813,23 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
   }
 
   void _scrollToStep(int step) {
-    final itemHeight = 88.0;
-    final offset = (step * itemHeight).clamp(0.0, double.infinity);
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        offset,
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-      );
-    }
+    if (!_scrollController.hasClients) return;
+    
+    final itemHeight = 75.0; // Approximate height of each step widget
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    
+    // Target offset to center the step
+    final targetOffset = (step * itemHeight) - (viewportHeight / 2) + (itemHeight / 2);
+    
+    // Clamp to valid scroll range
+    final offset = targetOffset.clamp(0.0, maxExtent);
+    
+    _scrollController.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   Future<void> _runProcess() async {
