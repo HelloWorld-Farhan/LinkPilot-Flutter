@@ -1,4 +1,32 @@
+import 'dart:async';
+import 'package:http/http.dart' as http;
+
 class UrlParser {
+  static Future<String?> fetchWebsiteTitle(String urlString) async {
+    try {
+      if (!urlString.startsWith('http')) {
+        urlString = 'https://$urlString';
+      }
+      if (!isValidUrl(urlString)) return null;
+
+      final response = await http.get(Uri.parse(urlString)).timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        final body = response.body;
+        final titleRegex = RegExp(r'<title[^>]*>([^<]+)<\/title>', caseSensitive: false);
+        final match = titleRegex.firstMatch(body);
+        if (match != null && match.groupCount >= 1) {
+          String title = match.group(1)!.trim();
+          // Clean up common suffixes like " | Company" or " - Careers"
+          title = title.replaceAll(RegExp(r'\s+[|\-]\s+.*$'), '');
+          return title;
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   static String extractCompanyName(String urlString) {
     try {
       if (!urlString.startsWith('http')) {

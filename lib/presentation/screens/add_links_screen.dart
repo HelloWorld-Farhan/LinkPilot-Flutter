@@ -732,6 +732,16 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
                   if (name.isNotEmpty) {
                     setState(() => data.nameController.text = name);
                   }
+                  
+                  // Try fetching real title
+                  UrlParser.fetchWebsiteTitle(val).then((title) {
+                    if (title != null && title.isNotEmpty && mounted) {
+                      // Only replace if the user hasn't started manually typing over the fallback
+                      if (data.nameController.text == name) {
+                        setState(() => data.nameController.text = title);
+                      }
+                    }
+                  });
                 }
                 if (val.isNotEmpty && idx == _controllers.length - 1) {
                   _addRows(1);
