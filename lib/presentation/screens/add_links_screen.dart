@@ -176,20 +176,20 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
         sendEmail: _sendEmail,
         validLinks: validLinks,
         ref: ref,
-        onComplete: (String? driveLink, bool success, String? error) {
+        onComplete: (String? driveLink, String? webpageLink, bool success, String? error) {
           Navigator.pop(ctx); // close sheet
           if (success) {
-            _onSuccess(driveLink, validLinks, isError: false);
+            _onSuccess(driveLink, webpageLink, validLinks, isError: false);
           } else {
             // Force save to history because email might have sent correctly
-            _onSuccess(driveLink, validLinks, isError: true, errorMessage: error);
+            _onSuccess(driveLink, webpageLink, validLinks, isError: true, errorMessage: error);
           }
         },
       ),
     );
   }
 
-  void _onSuccess(String? driveLink, List<Map<String, String>> validLinks, {bool isError = false, String? errorMessage}) async {
+  void _onSuccess(String? driveLink, String? webpageLink, List<Map<String, String>> validLinks, {bool isError = false, String? errorMessage}) async {
     _saveEmail(_emailController.text);
     // Save to DB via provider (handles both isar write + state update)
     final historyItem = HistoryItem()
@@ -198,6 +198,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       ..generatedAt = DateTime.now()
       ..totalLinks = validLinks.length
       ..driveLink = driveLink
+      ..webpageLink = webpageLink
       ..status = isError ? 'Error (Saved)' : (_sendEmail ? 'Sent' : 'Generated')
       ..companies = validLinks.map((e) => e['company']!).toList()
       ..urls = validLinks.map((e) => e['url']!).toList();
@@ -769,7 +770,7 @@ class _ProcessingSheet extends ConsumerStatefulWidget {
   final bool sendEmail;
   final List<Map<String, String>> validLinks;
   final WidgetRef ref;
-  final void Function(String? driveLink, bool success, String? error) onComplete;
+  final void Function(String? driveLink, String? webpageLink, bool success, String? error) onComplete;
 
   const _ProcessingSheet({
     required this.reportName,
@@ -798,6 +799,7 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
   bool _isError = false;
   String? _errorMsg;
   String? _driveLink;
+  String? _webpageLink;
   final ScrollController _scrollController = ScrollController();
 
   late final List<_Step> _steps;
@@ -808,6 +810,7 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
     _steps = [
       const _Step(icon: Icons.link_rounded,          label: 'Packaging links',       detail: 'Compiling all your URLs into a structured report'),
       const _Step(icon: Icons.picture_as_pdf_rounded, label: 'Generating PDF',        detail: 'Converting your links into a beautiful PDF document'),
+      const _Step(icon: Icons.web_rounded,            label: 'Interactive Webpage',   detail: 'Creating a clickable checklist for your links'),
       const _Step(icon: Icons.cloud_upload_rounded,   label: 'Uploading to Drive',    detail: 'Saving your PDF securely to Google Drive'),
       if (widget.sendEmail)
         const _Step(icon: Icons.email_rounded,        label: 'Sending email',         detail: 'Dispatching report to your recipient'),
@@ -863,20 +866,21 @@ class _ProcessingSheetState extends ConsumerState<_ProcessingSheet>
 
     if (response['success'] == true) {
       _driveLink = response['driveLink'] as String?;
+      _webpageLink = response['webpageLink'] as String?;
       setState(() {
         _currentStep = _steps.length - 1;
         _isDone = true;
       });
       _scrollToStep(_steps.length - 1);
       await Future.delayed(const Duration(milliseconds: 900));
-      if (mounted) widget.onComplete(_driveLink, true, null);
+      if (mounted) widget.onComplete(_driveLink, _webpageLink, true, null);
     } else {
       setState(() {
         _isError = true;
         _errorMsg = response['error']?.toString() ?? 'Unknown error';
       });
       await Future.delayed(const Duration(milliseconds: 400));
-      if (mounted) widget.onComplete(null, false, _errorMsg);
+      if (mounted) widget.onComplete(null, null, false, _errorMsg);
     }
   }
 

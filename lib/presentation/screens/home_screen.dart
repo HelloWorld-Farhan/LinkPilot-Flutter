@@ -523,6 +523,72 @@ class _HistoryDetailSheet extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (item.webpageLink != null) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () async {
+                              final uri = Uri.parse(item.webpageLink!);
+                              try {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                debugPrint("Could not launch $uri: $e");
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF285A48), Color(0xFF408A71)],
+                                ),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.forest.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.web_rounded, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text('Open Webpage',
+                                      style: TextStyle(
+                                          color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: item.webpageLink!));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: const Text('Webpage link copied!'),
+                              backgroundColor: AppTheme.forest,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.mint.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppTheme.mint.withOpacity(0.6)),
+                            ),
+                            child: const Icon(Icons.copy_rounded, color: AppTheme.forest),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 20),
                   ],
 

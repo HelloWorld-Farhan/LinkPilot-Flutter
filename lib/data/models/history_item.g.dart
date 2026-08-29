@@ -56,6 +56,11 @@ const HistoryItemSchema = CollectionSchema(
       id: 7,
       name: r'urls',
       type: IsarType.stringList,
+    ),
+    r'webpageLink': PropertySchema(
+      id: 8,
+      name: r'webpageLink',
+      type: IsarType.string,
     )
   },
   estimateSize: _historyItemEstimateSize,
@@ -101,6 +106,12 @@ int _historyItemEstimateSize(
       bytesCount += value.length * 3;
     }
   }
+  {
+    final value = object.webpageLink;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -118,6 +129,7 @@ void _historyItemSerialize(
   writer.writeString(offsets[5], object.status);
   writer.writeLong(offsets[6], object.totalLinks);
   writer.writeStringList(offsets[7], object.urls);
+  writer.writeString(offsets[8], object.webpageLink);
 }
 
 HistoryItem _historyItemDeserialize(
@@ -136,6 +148,7 @@ HistoryItem _historyItemDeserialize(
   object.status = reader.readString(offsets[5]);
   object.totalLinks = reader.readLong(offsets[6]);
   object.urls = reader.readStringList(offsets[7]) ?? [];
+  object.webpageLink = reader.readStringOrNull(offsets[8]);
   return object;
 }
 
@@ -162,6 +175,8 @@ P _historyItemDeserializeProp<P>(
       return (reader.readLong(offset)) as P;
     case 7:
       return (reader.readStringList(offset) ?? []) as P;
+    case 8:
+      return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -1433,6 +1448,160 @@ extension HistoryItemQueryFilter
       );
     });
   }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'webpageLink',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'webpageLink',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'webpageLink',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'webpageLink',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'webpageLink',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'webpageLink',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterFilterCondition>
+      webpageLinkIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'webpageLink',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension HistoryItemQueryObject
@@ -1513,6 +1682,18 @@ extension HistoryItemQuerySortBy
   QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByTotalLinksDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'totalLinks', Sort.desc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByWebpageLink() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'webpageLink', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> sortByWebpageLinkDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'webpageLink', Sort.desc);
     });
   }
 }
@@ -1603,6 +1784,18 @@ extension HistoryItemQuerySortThenBy
       return query.addSortBy(r'totalLinks', Sort.desc);
     });
   }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenByWebpageLink() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'webpageLink', Sort.asc);
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QAfterSortBy> thenByWebpageLinkDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'webpageLink', Sort.desc);
+    });
+  }
 }
 
 extension HistoryItemQueryWhereDistinct
@@ -1657,6 +1850,13 @@ extension HistoryItemQueryWhereDistinct
   QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctByUrls() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'urls');
+    });
+  }
+
+  QueryBuilder<HistoryItem, HistoryItem, QDistinct> distinctByWebpageLink(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'webpageLink', caseSensitive: caseSensitive);
     });
   }
 }
@@ -1715,6 +1915,12 @@ extension HistoryItemQueryProperty
   QueryBuilder<HistoryItem, List<String>, QQueryOperations> urlsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'urls');
+    });
+  }
+
+  QueryBuilder<HistoryItem, String?, QQueryOperations> webpageLinkProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'webpageLink');
     });
   }
 }

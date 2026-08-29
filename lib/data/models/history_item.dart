@@ -15,6 +15,7 @@ class HistoryItem {
   late int totalLinks;
 
   String? driveLink;
+  String? webpageLink;
 
   late String status; // e.g. "Sent", "Generated", "Failed"
 
