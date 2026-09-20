@@ -127,7 +127,9 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       setState(() => _reportNameError = 'Report name is required');
       return;
     }
-    final exists = history.any((h) => h.reportName.toLowerCase() == value.toLowerCase());
+    final exists = history.any((h) => 
+        h.reportName.toLowerCase() == value.toLowerCase() && 
+        h.id != widget.draft?.id);
     setState(() {
       _reportNameError = exists ? 'A report with this name already exists' : null;
     });
@@ -144,7 +146,8 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
     if (_reportNameError != null) return;
 
     if (history.any((h) =>
-        h.reportName.toLowerCase() == _reportNameController.text.toLowerCase())) {
+        h.reportName.toLowerCase() == _reportNameController.text.toLowerCase() && 
+        h.id != widget.draft?.id)) {
       setState(() => _reportNameError = 'A report with this name already exists');
       return;
     }
