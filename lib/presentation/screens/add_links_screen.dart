@@ -654,6 +654,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
