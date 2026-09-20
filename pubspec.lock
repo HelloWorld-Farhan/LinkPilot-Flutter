@@ -440,6 +440,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0+1"
+  isar_db_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: isar_db_flutter_libs
+      sha256: d0858c8f673cb087e592ba748c01c807871cf3e9de7bd6854aaa9f0a72cf05b5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1+1"
   isar_flutter_libs:
     dependency: "direct main"
     description:

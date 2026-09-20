@@ -6,6 +6,7 @@
         android:label="LinkPilot"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
+        android:extractNativeLibs="true"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"

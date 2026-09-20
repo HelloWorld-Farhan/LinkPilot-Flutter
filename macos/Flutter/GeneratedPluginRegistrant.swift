@@ -6,6 +6,7 @@ import FlutterMacOS
 import Foundation
 
 import flutter_local_notifications
+import isar_db_flutter_libs
 import isar_flutter_libs
 import shared_preferences_foundation
 import url_launcher_macos
@@ -14,6 +15,7 @@ import workmanager_apple
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
+  IsarDbFlutterLibsPlugin.register(with: registry.registrar(forPlugin: "IsarDbFlutterLibsPlugin"))
   IsarFlutterLibsPlugin.register(with: registry.registrar(forPlugin: "IsarFlutterLibsPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
   UrlLauncherPlugin.register(with: registry.registrar(forPlugin: "UrlLauncherPlugin"))

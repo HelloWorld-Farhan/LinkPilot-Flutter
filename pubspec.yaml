@@ -25,6 +25,7 @@ dependencies:
   url_launcher: ^6.3.2
   intl: ^0.20.3
   uuid: ^4.6.0
+  isar_db_flutter_libs: ^1.0.1+1
 
 dev_dependencies:
   flutter_test:
