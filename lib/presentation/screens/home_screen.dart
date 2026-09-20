@@ -16,151 +16,175 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(historyListProvider);
+    final reports = history.where((h) => h.status != 'Draft').toList();
+    final drafts = history.where((h) => h.status == 'Draft').toList();
 
-    return Scaffold(
-      backgroundColor: AppTheme.bg,
-      body: CustomScrollView(
-        slivers: [
-          // ── Hero Header ────────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 170,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: AppTheme.ink,
-            flexibleSpace: FlexibleSpaceBar(
-              collapseMode: CollapseMode.pin,
-              titlePadding: EdgeInsets.zero,
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF091413),
-                      Color(0xFF285A48),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: AppTheme.bg,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverAppBar(
+              expandedHeight: 180,
+              floating: false,
+              pinned: true,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: AppTheme.ink,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.pin,
+                titlePadding: EdgeInsets.zero,
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF091413),
+                        Color(0xFF285A48),
+                      ],
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 60),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.mint.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppTheme.mint.withOpacity(0.25)),
+                            ),
+                            child: const Icon(Icons.link_rounded, color: AppTheme.mint, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          const Text(
+                            'LinkPilot',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppTheme.teal.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${history.length} record${history.length == 1 ? '' : 's'}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.mint,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppTheme.mint.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppTheme.mint.withOpacity(0.25)),
-                          ),
-                          child: const Icon(Icons.link_rounded, color: AppTheme.mint, size: 22),
-                        ),
-                        const SizedBox(width: 14),
-                        const Text(
-                          'LinkPilot',
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppTheme.teal.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${history.length} report${history.length == 1 ? '' : 's'}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.mint,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.ink,
+                    border: Border(bottom: BorderSide(color: AppTheme.mint.withOpacity(0.2))),
+                  ),
+                  child: const TabBar(
+                    indicatorColor: AppTheme.mint,
+                    indicatorWeight: 3,
+                    labelColor: AppTheme.mint,
+                    unselectedLabelColor: Colors.white60,
+                    labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                    tabs: [
+                      Tab(text: 'Reports'),
+                      Tab(text: 'Drafts'),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-
-          // ── Content ───────────────────────────────────────────────────
-          if (history.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: AppTheme.mint.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.mint.withOpacity(0.4), width: 2),
-                      ),
-                      child: const Icon(Icons.article_outlined, size: 52, color: AppTheme.teal),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'No reports yet',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.forest,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Tap + to create your first link report',
-                      style: TextStyle(fontSize: 14, color: AppTheme.textGrey),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _buildHistoryCard(context, ref, history[index], index),
-                  childCount: history.length,
-                ),
-              ),
-            ),
-        ],
-      ),
-
-      // ── FAB ────────────────────────────────────────────────────────────
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, a, __) => const AddLinksScreen(),
-            transitionsBuilder: (_, a, __, child) => SlideTransition(
-              position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-                  .animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-              child: child,
-            ),
+          ],
+          body: TabBarView(
+            children: [
+              _buildList(reports, 'No reports yet', 'Tap + to create your first link report', ref),
+              _buildList(drafts, 'No drafts', 'Any unsent reports will be saved here', ref),
+            ],
           ),
         ),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Report', style: TextStyle(fontWeight: FontWeight.w700)),
-      ).animate().fadeIn(delay: 300.ms).slideY(begin: 1.0, curve: Curves.easeOutBack),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, a, __) => const AddLinksScreen(),
+              transitionsBuilder: (_, a, __, child) => SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                    .animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+                child: child,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('New Report', style: TextStyle(fontWeight: FontWeight.w700)),
+        ).animate().fadeIn(delay: 300.ms).slideY(begin: 1.0, curve: Curves.easeOutBack),
+      ),
+    );
+  }
+
+  Widget _buildList(List<HistoryItem> items, String emptyTitle, String emptySubtitle, WidgetRef ref) {
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.mint.withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.mint.withOpacity(0.4), width: 2),
+              ),
+              child: const Icon(Icons.article_outlined, size: 52, color: AppTheme.teal),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              emptyTitle,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.forest,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              emptySubtitle,
+              style: const TextStyle(fontSize: 14, color: AppTheme.textGrey),
+            ),
+          ],
+        ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.9, 0.9)),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+      itemCount: items.length,
+      itemBuilder: (context, index) => _buildHistoryCard(context, ref, items[index], index),
     );
   }
 
@@ -186,7 +210,23 @@ class HomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _showHistoryDetails(context, ref, item),
+          onTap: () {
+            if (item.status == 'Draft') {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (_, a, __) => AddLinksScreen(draft: item),
+                  transitionsBuilder: (_, a, __, child) => SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+                        .animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+                    child: child,
+                  ),
+                ),
+              );
+            } else {
+              _showHistoryDetails(context, ref, item);
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -236,13 +276,15 @@ class HomeScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: isSent
                                 ? AppTheme.mint.withOpacity(0.4)
-                                : AppTheme.mint.withOpacity(0.2),
+                                : item.status == 'Draft' 
+                                    ? Colors.orange.withOpacity(0.2)
+                                    : AppTheme.mint.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            isSent ? '✅ Sent' : '📄 Saved',
+                            isSent ? '✅ Sent' : item.status == 'Draft' ? '✏️ Draft' : '📄 Saved',
                             style: TextStyle(
-                              color: isSent ? AppTheme.forest : AppTheme.teal,
+                              color: isSent ? AppTheme.forest : item.status == 'Draft' ? Colors.orange[800] : AppTheme.teal,
                               fontWeight: FontWeight.w700,
                               fontSize: 11,
                             ),

@@ -23,7 +23,8 @@ class LinkEntryData {
 }
 
 class AddLinksScreen extends ConsumerStatefulWidget {
-  const AddLinksScreen({super.key});
+  final HistoryItem? draft;
+  const AddLinksScreen({super.key, this.draft});
 
   @override
   ConsumerState<AddLinksScreen> createState() => _AddLinksScreenState();
@@ -41,10 +42,27 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
   bool _isLoading = false;
   String? _reportNameError;
 
+  bool _isGenerated = false;
+
   @override
   void initState() {
     super.initState();
     _loadSavedEmails();
+    if (widget.draft != null) {
+      _reportNameController.text = widget.draft!.reportName;
+      _emailController.text = widget.draft!.recipientEmail;
+      if (widget.draft!.companies.isNotEmpty) {
+        _controllers.clear();
+        for (int i = 0; i < widget.draft!.companies.length; i++) {
+          final data = LinkEntryData();
+          data.nameController.text = widget.draft!.companies[i];
+          if (i < widget.draft!.urls.length) {
+            data.urlController.text = widget.draft!.urls[i];
+          }
+          _controllers.add(data);
+        }
+      }
+    }
   }
 
   Future<void> _loadSavedEmails() async {
@@ -159,6 +177,48 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       return;
     }
 
+    // Show confirmation dialog before generation
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.mint.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.send_rounded, color: AppTheme.forest, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Generate Report?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: Text(
+          _sendEmail
+              ? 'This will compile all links and send the PDF to ${_emailController.text}. Proceed?'
+              : 'This will compile all links and save the PDF to Google Drive. Proceed?',
+          style: const TextStyle(color: AppTheme.textGrey, height: 1.5),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.forest,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     // Show animated progress sheet
     _showProgressSheet(validLinks);
   }
@@ -191,8 +251,10 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
 
   void _onSuccess(String? driveLink, String? webpageLink, List<Map<String, String>> validLinks, {bool isError = false, String? errorMessage}) async {
     _saveEmail(_emailController.text);
+    _isGenerated = true; // Prevents draft saving
     // Save to DB via provider (handles both isar write + state update)
-    final historyItem = HistoryItem()
+    final historyItem = widget.draft ?? HistoryItem();
+    historyItem
       ..reportName = _reportNameController.text
       ..recipientEmail = _emailController.text
       ..generatedAt = DateTime.now()
@@ -203,7 +265,7 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
       ..companies = validLinks.map((e) => e['company']!).toList()
       ..urls = validLinks.map((e) => e['url']!).toList();
 
-    await ref.read(historyListProvider.notifier).addHistory(historyItem);
+    await ref.read(historyListProvider.notifier).putHistory(historyItem);
 
     if (!mounted) return;
 
@@ -368,8 +430,15 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
+      body: PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) {
+            _saveDraftIfNeeded();
+          }
+        },
+        child: Form(
+          key: _formKey,
         child: ListView(
           controller: _mainScrollController,
           padding: const EdgeInsets.all(20),
@@ -759,6 +828,30 @@ class _AddLinksScreenState extends ConsumerState<AddLinksScreen> {
         ),
       ).animate().fadeIn(duration: 250.ms).slideY(begin: 0.05),
     );
+  }
+
+  void _saveDraftIfNeeded() {
+    if (_isGenerated) return;
+
+    final reportName = _reportNameController.text.trim();
+    final email = _emailController.text.trim();
+    final validLinks = _controllers.where((c) => c.nameController.text.isNotEmpty || c.urlController.text.isNotEmpty).toList();
+
+    if (reportName.isEmpty && email.isEmpty && validLinks.isEmpty) {
+      return; 
+    }
+
+    final historyItem = widget.draft ?? HistoryItem();
+    historyItem
+      ..reportName = reportName.isNotEmpty ? reportName : 'Untitled Draft'
+      ..recipientEmail = email
+      ..generatedAt = DateTime.now()
+      ..totalLinks = validLinks.length
+      ..status = 'Draft'
+      ..companies = validLinks.map((e) => e.nameController.text.trim()).toList()
+      ..urls = validLinks.map((e) => e.urlController.text.trim()).toList();
+
+    ref.read(historyListProvider.notifier).putHistory(historyItem);
   }
 }
 

@@ -81,11 +81,19 @@ class HistoryListNotifier extends StateNotifier<List<HistoryItem>> {
     state = history;
   }
 
-  Future<void> addHistory(HistoryItem item) async {
+  Future<void> putHistory(HistoryItem item) async {
     await _isar.writeTxn(() async {
       await _isar.historyItems.put(item);
     });
-    state = [item, ...state];
+    
+    final existingIndex = state.indexWhere((element) => element.id == item.id);
+    if (existingIndex >= 0) {
+      final newState = List<HistoryItem>.from(state);
+      newState[existingIndex] = item;
+      state = newState;
+    } else {
+      state = [item, ...state];
+    }
   }
   
   Future<void> clearHistory() async {
